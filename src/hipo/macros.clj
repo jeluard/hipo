@@ -15,40 +15,6 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defn constant? [data]
-  (some #(% data) [number? keyword? string?]))
-
-(defn single-selector? [data]
-  (and (constant? data)
-       (re-matches #"^\S+$" (as-str data))))
-
-(defn id-selector? [s]
-  (and (constant? s)
-       (re-matches #"^#[\w-]+$" (as-str s))))
-
-(defn class-selector? [s]
-  (and (constant? s)
-       (re-matches #"^\.[a-z_-][a-z0-9_-]*$" (as-str s))))
-
-(defn tag-selector? [s]
-  (and (constant? s)
-       (re-matches #"^[a-z_-][a-z0-9_-]*$" (as-str s))))
-
-(defn selector [data]
-  (cond
-   (coll? data) (str/join " " (map selector data))
-   (constant? data) (as-str data)))
-
-(defn selector [data]
-  (cond
-    (coll? data) (clojure.string/join " " (map selector data))
-    (or (string? data) (keyword? data)) (name data)))
-
-(defn selector-form [data]
-  (if (constant? data)
-    (selector data)
-    `(selector ~data)))
-
 (defmacro compile-add-attr!
   "compile-time add attribute"
   [d k v]
