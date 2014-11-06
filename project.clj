@@ -1,4 +1,4 @@
-(defproject hipo "0.1.0-SNAPSHOT"
+(defproject hipo "0.1.0"
   :description "ClojureScript DOM templating based on hiccup syntax."
   :url "https://github.com/jeluard/hipo"
   :license {:name "Eclipse Public License"
