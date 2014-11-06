@@ -1,4 +1,4 @@
-(defproject hipo "0.1.0"
+(defproject hipo "0.2.0-SNAPSHOT"
   :description "ClojureScript DOM templating based on hiccup syntax."
   :url "https://github.com/jeluard/hipo"
   :license {:name "Eclipse Public License"
@@ -18,5 +18,5 @@
                       :pretty-print true}}}
    :test-commands {"unit" ["phantomjs" :runner "target/unit-test.js"]}}
   :aliases {"test" ["do" "clean" ["cljsbuild" "test"]]}
-  :deploy-repositories [["releases" :clojars]]
+  :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
   :min-lein-version "2.5.0")
