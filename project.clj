@@ -18,4 +18,5 @@
                       :pretty-print true}}}
    :test-commands {"unit" ["phantomjs" :runner "target/unit-test.js"]}}
   :aliases {"test" ["do" "clean" ["cljsbuild" "test"]]}
+  :deploy-repositories [["releases" :clojars]]
   :min-lein-version "2.5.0")
