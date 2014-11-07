@@ -22,12 +22,6 @@
     (doseq [e [e1 e2]] (is (-> e .-tagName (= "A")))
            (is (= "anchor" (.-textContent e)))
            (is (= "http://somelink" (.getAttribute e "href")))))
-  (let [e1 (template/base-element :div#id.class1.class2)
-        e2 (node :div#id.class1.class2)]
-    (doseq [e [e1 e2]]
-      (is (= "DIV" (.-tagName e)))
-      (is (= "id" (.getAttribute e "id")))
-      (is (= "class1 class2" (.-className e)))))
   (let [e (template/node [:div#id/test {:class :class/test}])]
     (is (= "class/test" (.-className e)))
     (is (= "id/test" (.getAttribute e "id"))))

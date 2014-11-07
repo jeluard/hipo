@@ -62,10 +62,7 @@
 
 (defmacro node [data]
   (cond
-   (= (str data) "js/document") `js/document
    (vector? data) `(compile-compound ~data)
-   (keyword? data) `(compile-compound [~data])
-   (or (string? data) (:text (meta data))) `(.createTextNode js/document ~data)
    :else `(hipo.template/->node-like ~data)))
 
 (defmacro deftemplate [name args & node-forms]
