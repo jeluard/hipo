@@ -42,12 +42,10 @@
        ~@(when id
            [`(.setAttribute ~dom-sym "id" ~id)])
        ~@(for [[k v] literal-attrs]
-           (if true ;(keyword? k)
-             `(compile-add-attr! ~dom-sym ~k ~v)
-             `(template/set-attr! ~dom-sym ~k ~v)))
+           `(compile-add-attr! ~dom-sym ~k ~v))
        ~@(when var-attrs
            [`(doseq [[k# v#] ~var-attrs]
-               (template/set-attr! ~dom-sym k# v#))])
+               (when v# (.setAttribute ~dom-sym (name k#) v#)))])
        ~@(for [c children]
            `(.appendChild ~dom-sym (node ~c)))
        ~dom-sym)))

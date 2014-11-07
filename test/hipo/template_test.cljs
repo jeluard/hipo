@@ -50,6 +50,12 @@
     (is (= "a comment should not throw an exception" (.-textContent comment)))
     (is (= comment (template/node comment)))))
 
+(deftest attrs-template-test
+  (let [e (node [:a ^:attrs (merge {} {:href "http://somelink"}) "anchor"])]
+    (is (-> e .-tagName (= "A")))
+    (is (= "anchor" (.-textContent e)))
+    (is (= "http://somelink" (.getAttribute e "href")))))
+
 (deftest nested-template-test
   ;; test html for example list form
   ;; note: if practice you can write the direct form (without the list) you should.
