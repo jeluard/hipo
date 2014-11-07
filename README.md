@@ -1,4 +1,6 @@
-A ClojureScript DOM templating library based on hiccup syntax.
+# Hipo [![License](http://img.shields.io/badge/license-EPL-blue.svg?style=flat)](https://www.eclipse.org/legal/epl-v10.html) [![Build Status](http://img.shields.io/travis/jeluard/hipo.svg?style=flat)](http://travis-ci.org/#!/jeluard/hipo/builds) [![Dependency Status](https://www.versioneye.com/user/projects/545c247f287666dca9000049/badge.svg?style=flat)](https://www.versioneye.com/user/projects/545c247f287666dca9000049)
+
+A ClojureScript DOM templating library based on [hiccup](https://github.com/weavejester/hiccup) syntax.
 
 ## Usage
 
@@ -39,16 +41,6 @@ The `deftemplate` macro is useful syntactic sugar for defining a function that r
   [:img {:src cat}])
 ```
 
-Thanks to [@ibdknox](https://github.com/ibdknox/), you can define view logic for custom types by implementing the `PElement` protocol:
-
-```clojure
-(defrecord MyModel [data]
-   hipo.template/PElement
-   (-elem [this] (node [:p (str "My data " data)])))
-
-(hipo/append! (sel1 :body) (MyModel. "is big"))
-```
-
 ### Type-Hinting Template Macros
 
 One caveat of using the compile-macro is that if you have a compound element (a vector element) and want to have a non-literal map as the attributes (the second element of the vector), then you need to use <code>^:attrs</code> meta-data so the compiler knows to process this symbol as a map of attributes in the runtime system. Here's an example:
@@ -63,9 +55,14 @@ For all pull requests, please ensure your tests pass (or add test cases) before 
 
     $ lein test
 
+## Credits
+
+Initial code comes from the great [dommy](https://github.com/Prismatic/dommy) library which is now focused on DOM manipulation.
+
 ## License
 
 Copyright (C) 2013 Prismatic
+
 Copyright (C) 2014 Julien Eluard
 
 Distributed under the Eclipse Public License, the same as Clojure.
