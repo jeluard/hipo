@@ -22,11 +22,6 @@
   `(when ~v
      ~(cond
        (identical? k :class) `(set! (.-className ~d) (.trim (str (.-className ~d) " " ~v)))
-       ;; If we can compile into a single string at compile time, then make single string
-       ;; and set it. Otherwise, need to fall back to calling runtime set-attr! for each class
-       (identical? k :classes) (if (every? #(or (string? %) (keyword? %)) v)
-                                 `(compile-add-attr! ~d :class ~(str/join " " (map as-str v)))
-                                 `(compile-add-attr! ~d :class (str/join " " ~v)))
        :else `(.setAttribute ~d ~(as-str k) ~v))))
 
 (defn parse-keyword

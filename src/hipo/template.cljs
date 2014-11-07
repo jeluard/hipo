@@ -147,7 +147,6 @@
     (doseq [[k v] attrs]
       (case k
         :class (add-class! n v)
-        :classes (doseq [c v] (add-class! n c))
         (set-attr! n k v)))
     (.appendChild n (->node-like children))
     n))

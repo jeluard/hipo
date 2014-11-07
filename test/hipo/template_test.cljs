@@ -16,13 +16,12 @@
       (is (= "some text" (.-textContent e)))
       (is (= js/document.TEXT_NODE (-> e .-childNodes (aget 0) .-nodeType)))
       (is (zero? (-> e .-children .-length)))))
-  (let [e1 (template/node [:a {:classes ["class1" "class2"] :href "http://somelink"} "anchor"])
+  (let [e1 (template/node [:a {:href "http://somelink"} "anchor"])
         e2 (node
-            [:a {:classes ["class1" "class2"] :href "http://somelink"} "anchor"])]
+            [:a {:href "http://somelink"} "anchor"])]
     (doseq [e [e1 e2]] (is (-> e .-tagName (= "A")))
            (is (= "anchor" (.-textContent e)))
-           (is (= "http://somelink" (.getAttribute e "href")))
-           (is (= "class1 class2" (.-className e)))))
+           (is (= "http://somelink" (.getAttribute e "href")))))
   (let [e1 (template/base-element :div#id.class1.class2)
         e2 (node :div#id.class1.class2)]
     (doseq [e [e1 e2]]
@@ -169,19 +168,6 @@
 (deftest empty-string-in-template
   (is (= "<span></span>"
          (.-outerHTML (span-wrapper "")))))
-
-
-(deftemplate classes-attr-template [x y]
-  [:div
-   {:classes [(str "class-" x) (str "class-" y)]}])
-
-(deftemplate classes-compilable-attr-template []
-  [:div
-   {:classes [:c1 :c2]}])
-
-(deftest classes-attr
-  (is (= "class-42 class-43" (.-className (classes-attr-template 42 43))))
-  (is (= "c1 c2" (.-className (classes-compilable-attr-template)))))
 
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (node [:p]))))
