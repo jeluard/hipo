@@ -1,42 +1,11 @@
 (ns hipo.template
-  (:require [clojure.string :as str]
-            [hipo.utils :refer [as-str]]))
+  (:require [clojure.string :as str]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defn set-attr!
-  "Sets dom attributes on and returns `elem`.
-   Attributes without values will be set to \"true\":
-
-    (set-attr! elem :disabled)
-
-   With values, the function takes variadic kv pairs:
-
-    (set-attr! elem :id \"some-id\"
-                    :name \"some-name\")"
-  [elem k v]
-  (when v
-     (if (fn? v)
-       (doto elem
-             (aset (as-str k) v))
-        (doto elem
-              (.setAttribute
-                (as-str k)
-                v)))))
-
 (defprotocol PElement
   (-elem [this] "return the element representation of this"))
-
-(defn next-css-index
-  "index of css character (#,.) in base-element. bottleneck"
-  [s start-idx]
-  (let [id-idx (.indexOf s "#" start-idx)
-        class-idx (.indexOf s "." start-idx)
-        idx (.min js/Math id-idx class-idx)]
-    (if (< idx 0)
-      (.max js/Math id-idx class-idx)
-      idx)))
 
 (defn- ^boolean class-match?
   "does class-name string have class starting at index idx.
@@ -66,7 +35,7 @@
 (defn add-class!
   "add class to element"
   ([elem classes]
-   (let [classes (-> classes as-str str/trim)]
+   (let [classes (-> classes name str/trim)]
      (when (seq classes)
        (if-let [class-list (.-classList elem)]
          (doseq [class (.split classes #"\s+")]
@@ -80,10 +49,20 @@
                        (str class-name " " class))))))))
      elem)))
 
+(defn next-css-index
+  "index of css character (#,.) in base-element. bottleneck"
+  [s start-idx]
+  (let [id-idx (.indexOf s "#" start-idx)
+        class-idx (.indexOf s "." start-idx)
+        idx (.min js/Math id-idx class-idx)]
+    (if (< idx 0)
+      (.max js/Math id-idx class-idx)
+      idx)))
+
 (defn base-element
   "dom element from css-style keyword like :a.class1 or :span#my-span.class"
   [node-key]
-  (let [node-str (as-str node-key)
+  (let [node-str (name node-key)
         base-idx (next-css-index node-str 0)
         tag (cond
              (> base-idx 0) (.substring node-str 0 base-idx)
@@ -145,9 +124,9 @@
                 maybe-attrs)
         children  (if attrs children (cons maybe-attrs children))]
     (doseq [[k v] attrs]
-      (case k
-        :class (add-class! n v)
-        (set-attr! n k v)))
+      (if (= :class k)
+        (add-class! n v)
+        (when v (.setAttribute n (name k) v))))
     (.appendChild n (->node-like children))
     n))
 
