@@ -22,13 +22,6 @@ Templating syntax is based on [Hiccup](https://github.com/weavejester/hiccup/), 
   [:div#id.class1
     (for [r (range 2)]
       [:span.text (str "word" r)])]) ;; => [object HTMLElement]
-
-;; Styles can be inlined as a map
-(node
-  [:span
-    {:style
-      {:color "#aaa"
-       :text-decoration "line-through"}}])
 ```
 
 The `deftemplate` macro is useful syntactic sugar for defining a function that returns a DOM node.

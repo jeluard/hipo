@@ -36,11 +36,6 @@
         e2 (node [:div#id {:class "class1 class2"}])]
     (doseq [e [e1 e2]]
       (is (= "class1 class2" (.-className e)))))
-  (let [e1 (template/compound-element [:div {:style {:margin-left "15px"}}])
-        e2 (node [:div {:style {:margin-left "15px"}}])]
-    (doseq [e [e1 e2]]
-      (is (= "DIV" (.-tagName e)))
-      (is (= "margin-left:15px;" (.getAttribute e "style")))))
   (let [e (template/compound-element [:div (interpose [:br] (repeat 3 "test"))])]
     (is (-> e .-outerHTML (= "<div>test<br>test<br>test</div>"))))
   (let [e1 (template/compound-element [:div.class1 [:span#id1 "span1"] [:span#id2 "span2"]])
@@ -108,21 +103,6 @@
     (doseq [e [e1 e1c]] (is (-> e (.getAttribute "selected") (= "true"))))
     (doseq [e [e2 e2c]] (is (-> e (.getAttribute "selected") (nil?))))
     (doseq [e [e3 e3c]] (is (-> e (.getAttribute "selected") (nil?))))))
-
-(deftest style-str
-  (let [e1 (template/node [:div {:style {:background-color "lime"}}])
-        e1c (node [:div {:style {:background-color "lime"}}])
-        e2 (template/node [:div {:style {:background-color :lime}}])
-        e2c (node [:div {:style {:background-color :lime}}])
-        e3 (template/node [:div {:style "background-color: lime"}])
-        e3c (node [:div {:style "background-color: lime"}])
-        e4 (template/node [:div {:style nil}])
-        e4c (node [:div {:style nil}])]
-    (doseq [e [e1 e1c]] (is (= (.getAttribute e "style") "background-color:lime;")))
-    (doseq [e [e2 e2c]] (is (= (.getAttribute e "style") "background-color:lime;")))
-    (doseq [e [e3 e3c]] (is (= (.getAttribute e "style") "background-color: lime")))
-    (doseq [e [e4 e4c]] (is (nil? (.getAttribute e "style"))))))
-
 
 (deftemplate simple-template [[href anchor]]
   [:a.anchor {:href href} ^:text anchor])

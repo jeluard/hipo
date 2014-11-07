@@ -22,7 +22,6 @@
   `(when ~v
      ~(cond
        (identical? k :class) `(set! (.-className ~d) (.trim (str (.-className ~d) " " ~v)))
-       (identical? k :style) `(.setAttribute ~d ~(as-str k) (template/style-str ~v))
        ;; If we can compile into a single string at compile time, then make single string
        ;; and set it. Otherwise, need to fall back to calling runtime set-attr! for each class
        (identical? k :classes) (if (every? #(or (string? %) (keyword? %)) v)

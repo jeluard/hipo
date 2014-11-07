@@ -5,13 +5,6 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defn- style-str [x]
-  (if (string? x)
-    x
-    (->> x
-         (map (fn [[k v]] (str (as-str k) ":" (as-str v) ";")))
-         (str/join " "))))
-
 (defn set-attr!
   "Sets dom attributes on and returns `elem`.
    Attributes without values will be set to \"true\":
@@ -30,9 +23,7 @@
         (doto elem
               (.setAttribute
                 (as-str k)
-                (if (= k :style)
-                  (style-str v)
-                  v))))))
+                v)))))
 
 (defprotocol PElement
   (-elem [this] "return the element representation of this"))
