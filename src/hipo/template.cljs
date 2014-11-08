@@ -59,30 +59,40 @@
       (.max js/Math id-idx class-idx)
       idx)))
 
+(defn- create-element [namespace-uri tag is]
+  (if namespace-uri
+    (if is
+      (.createElementNS js/document namespace-uri tag is)
+      (.createElementNS js/document namespace-uri tag))
+    (if is
+      (.createElement js/document tag is)
+      (.createElement js/document tag))))
+
 (defn base-element
   "dom element from css-style keyword like :a.class1 or :span#my-span.class"
-  [node-key]
-  (let [node-str (name node-key)
-        base-idx (next-css-index node-str 0)
-        tag (cond
-             (> base-idx 0) (.substring node-str 0 base-idx)
-             (zero? base-idx) "div"
-             :else node-str)
-        node (if (+svg-tags+ tag)
-               (.createElementNS js/document +svg-ns+ tag)
-               (.createElement js/document tag))]
-    (when (>= base-idx 0)
-      (loop [str (.substring node-str base-idx)]
-        (let [next-idx (next-css-index str 1)
-              frag (if (>= next-idx 0)
-                     (.substring str 0 next-idx)
-                     str)]
-          (case (.charAt frag 0)
-            \. (add-class! node (.substring frag 1))
-            \# (.setAttribute node "id" (.substring frag 1)))
-          (when (>= next-idx 0)
-            (recur (.substring str next-idx))))))
-    node))
+  ([node-key] (base-element node-key nil))
+  ([node-key is]
+   (let [node-str (name node-key)
+         base-idx (next-css-index node-str 0)
+         tag (cond
+               (> base-idx 0) (.substring node-str 0 base-idx)
+               (zero? base-idx) "div"
+               :else node-str)
+         node (create-element (when (+svg-tags+ tag) +svg-ns+)
+
+                              tag is)]
+     (when (>= base-idx 0)
+       (loop [str (.substring node-str base-idx)]
+         (let [next-idx (next-css-index str 1)
+               frag (if (>= next-idx 0)
+                      (.substring str 0 next-idx)
+                      str)]
+           (case (.charAt frag 0)
+             \. (add-class! node (.substring frag 1))
+             \# (.setAttribute node "id" (.substring frag 1)))
+           (when (>= next-idx 0)
+             (recur (.substring str next-idx))))))
+     node)))
 
 (defn throw-unable-to-make-node [node-data]
   (throw (str "Don't know how to make node from: " (pr-str node-data))))
@@ -118,11 +128,11 @@
 (defn compound-element
   "element with either attrs or nested children [:div [:span \"Hello\"]]"
   [[tag-name maybe-attrs & children]]
-  (let [n (base-element tag-name)
-        attrs (when (and (map? maybe-attrs)
+  (let [attrs (when (and (map? maybe-attrs)
                          (not (satisfies? PElement maybe-attrs)))
                 maybe-attrs)
-        children  (if attrs children (cons maybe-attrs children))]
+        children  (if attrs children (cons maybe-attrs children))
+        n (base-element tag-name (:is attrs))]
     (doseq [[k v] attrs]
       (if (= :class k)
         (add-class! n v)

@@ -1,9 +1,6 @@
 (ns hipo.macros
   (:require [clojure.string :as str]))
 
-(declare node)
-
-(def +default-ns+ "http://www.w3.org/1999/xhtml")
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
@@ -28,6 +25,15 @@
      (str/join " " classes)
      id]))
 
+(defmacro create-element [namespace-uri tag is]
+  (if namespace-uri
+    (if is
+      `(.createElementNS js/document ~namespace-uri ~tag ~is)
+      `(.createElementNS js/document ~namespace-uri ~tag))
+    (if is
+      `(.createElement js/document ~tag ~is)
+      `(.createElement js/document ~tag))))
+
 (defmacro compile-compound [[node-key & rest]]
   (let [literal-attrs (when (map? (first rest)) (first rest))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
@@ -35,8 +41,8 @@
         children (drop (if (or literal-attrs var-attrs) 1 0) rest)
         [tag class-str id] (parse-keyword node-key)
         dom-sym (gensym "dom")
-        element-ns (if (+svg-tags+ tag) +svg-ns+ +default-ns+)]
-    `(let [~dom-sym (.createElementNS js/document ~element-ns ~(name tag))]
+        element-ns (when (+svg-tags+ tag) +svg-ns+)]
+    `(let [~dom-sym (create-element ~element-ns ~(name tag) (or (:is ~literal-attrs) (:is ~var-attrs)))]
        ~@(when-not (empty? class-str)
            [`(set! (.-className ~dom-sym) ~class-str)])
        ~@(when id

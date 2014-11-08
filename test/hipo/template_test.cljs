@@ -93,6 +93,16 @@
     (doseq [e [e2 e2c]] (is (-> e (.getAttribute "selected") (nil?))))
     (doseq [e [e3 e3c]] (is (-> e (.getAttribute "selected") (nil?))))))
 
+(deftest custom-elements-test
+  (is (exists? (.-registerElement js/document)))
+  (.registerElement js/document "my-custom-div" #js {:prototype (js/Object.create (.-prototype js/HTMLDivElement) #js {:test #js {:get (fn[] "")}}) :extends "div"})
+  (let [e1 (node [:div {:is "my-custom-div"} "content"])
+        e2 (template/node [:div {:is "my-custom-div"} "content"])]
+    (doseq [e [e1 e2]] (is (exists? (.-test e))))
+    (doseq [e [e1 e2]] (is (-> e .-tagName (= "DIV"))))
+    (doseq [e [e1 e2]] (is (= "content" (.-textContent e))))
+    (doseq [e [e1 e2]] (is (= "my-custom-div" (.getAttribute e "is"))))))
+
 (deftemplate simple-template [[href anchor]]
   [:a.anchor {:href href} ^:text anchor])
 
