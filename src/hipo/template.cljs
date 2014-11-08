@@ -189,8 +189,3 @@
   (if (satisfies? PElement data)
     (-elem data)
     (throw-unable-to-make-node data)))
-
-(defn html->nodes [html]
-  (let [parent (.createElement js/document "div")]
-    (.insertAdjacentHTML parent "beforeend" html)
-    (->> parent .-childNodes (.call js/Array.prototype.slice) seq)))

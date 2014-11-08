@@ -41,14 +41,7 @@
   (is (= "<span id=\"id1\">span1</span><span id=\"id2\">span2</span>"
          (-> [:div (for [x [1 2]] [:span {:id (str "id" x)} (str "span" x)])]
              template/node
-             .-innerHTML)))
-  (let [e (first (template/html->nodes "<div><p>some-text</p></div>"))]
-    (is (= "DIV" ( .-tagName e)))
-    (is (= "<p>some-text</p>" (.-innerHTML e)))
-    (is (=  e (template/node e))))
-  (let [comment (first (template/html->nodes "<!--a comment should not throw an exception-->"))]
-    (is (= "a comment should not throw an exception" (.-textContent comment)))
-    (is (= comment (template/node comment)))))
+             .-innerHTML))))
 
 (deftest attrs-template-test
   (let [e (node [:a ^:attrs (merge {} {:href "http://somelink"}) "anchor"])]
