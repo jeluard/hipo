@@ -41,8 +41,9 @@
         children (drop (if (or literal-attrs var-attrs) 1 0) rest)
         [tag class-str id] (parse-keyword node-key)
         dom-sym (gensym "dom")
-        element-ns (when (+svg-tags+ tag) +svg-ns+)]
-    `(let [~dom-sym (create-element ~element-ns ~(name tag) (or (:is ~literal-attrs) (:is ~var-attrs)))]
+        element-ns (when (+svg-tags+ tag) +svg-ns+)
+        is (:is literal-attrs)]
+    `(let [~dom-sym (create-element ~element-ns ~(name tag) ~is)]
        ~@(when-not (empty? class-str)
            [`(set! (.-className ~dom-sym) ~class-str)])
        ~@(when id
