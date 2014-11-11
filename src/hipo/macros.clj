@@ -44,21 +44,22 @@
                     (first rest))
         children (drop (if (or literal-attrs var-attrs) 1 0) rest)
         [tag class-str id] (parse-keyword node-key)
+        dom-sym (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
-    `(let [el# (create-element ~element-ns ~(name tag) ~is)]
+    `(let [~dom-sym (create-element ~element-ns ~(name tag) ~is)]
        ~@(when-not (empty? class-str)
-           [`(set! (.-className el#) ~class-str)])
+           [`(set! (.-className ~dom-sym) ~class-str)])
        ~@(when id
-           [`(set! (.-id el#) ~id)])
+           [`(set! (.-id ~dom-sym) ~id)])
        ~@(for [[k v] literal-attrs]
-           `(compile-add-attr! el# ~k ~v))
+           `(compile-add-attr! ~dom-sym ~k ~v))
        ~@(when var-attrs
            [`(doseq [[k# v#] ~var-attrs]
-               (when v# (.setAttribute el# (name k#) v#)))])
+               (when v# (.setAttribute ~dom-sym (name k#) v#)))])
        ~@(for [c children]
-           `(.appendChild el# (node ~c)))
-       el#)))
+           `(.appendChild ~dom-sym (node ~c)))
+       ~dom-sym)))
 
 (defmacro node [data]
   (if (vector? data)
