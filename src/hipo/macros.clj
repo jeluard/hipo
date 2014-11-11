@@ -9,9 +9,13 @@
   [d k v]
   (assert (keyword? k))
   `(when ~v
-     ~(if (identical? k :class)
-       `(set! (.-className ~d) (.trim (str (.-className ~d) " " ~v)))
-       `(.setAttribute ~d ~(name k) ~v))))
+     ~(cond
+        (identical? k :id)
+        `(set! (.-id ~d) ~v)
+        (identical? k :class)
+        `(set! (.-className ~d) (.trim (str (.-className ~d) " " ~v)))
+        :else
+        `(.setAttribute ~d ~(name k) ~v))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
@@ -46,7 +50,7 @@
        ~@(when-not (empty? class-str)
            [`(set! (.-className el#) ~class-str)])
        ~@(when id
-           [`(.setAttribute el# "id" ~id)])
+           [`(set! (.-id el#) ~id)])
        ~@(for [[k v] literal-attrs]
            `(compile-add-attr! el# ~k ~v))
        ~@(when var-attrs
