@@ -4,18 +4,30 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
+(defn constant?
+  [o]
+  (or (string? o) (number? o) (true? o) (false? o) (keyword? o) (char? o)))
+
+(defmacro add-attr!
+  [el k v]
+  (cond
+    (identical? k :id)
+    `(set! (.-id ~el) ~v)
+    (identical? k :class)
+    `(set! (.-className ~el) (.trim (str (.-className ~el) " " ~v)))
+    :else
+    `(.setAttribute ~el ~(name k) ~v)))
+
 (defmacro compile-add-attr!
   "compile-time add attribute"
-  [d k v]
+  [el k v]
   (assert (keyword? k))
-  `(when ~v
-     ~(cond
-        (identical? k :id)
-        `(set! (.-id ~d) ~v)
-        (identical? k :class)
-        `(set! (.-className ~d) (.trim (str (.-className ~d) " " ~v)))
-        :else
-        `(.setAttribute ~d ~(name k) ~v))))
+  (if (constant? v)
+    (if v
+      `(add-attr! ~el ~k ~v))
+    `(let [v# ~v]
+       (if v#
+         (add-attr! ~el ~k v#)))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs

@@ -22,6 +22,10 @@
     (doseq [e [e1 e2]] (is (-> e .-tagName (= "A")))
            (is (= "anchor" (.-textContent e)))
            (is (= "http://somelink" (.getAttribute e "href")))))
+  (let [a (atom 0)
+        next-id #(swap! a inc)
+        e (node [:span {:attr (next-id)}])]
+    (is (= "1" (.getAttribute e "attr"))))
   (let [e1 (template/node [:div#id {:class "class1 class2"}])
         e2 (node [:div#id {:class "class1 class2"}])]
     (doseq [e [e1 e2]]
