@@ -4,9 +4,9 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defn constant?
+(defn literal?
   [o]
-  (or (string? o) (number? o) (true? o) (false? o) (keyword? o) (char? o)))
+  (or (string? o) (number? o) (true? o) (false? o) (keyword? o) (symbol? o) (char? o) (nil? o)))
 
 (defmacro add-attr!
   [el k v]
@@ -22,7 +22,7 @@
   "compile-time add attribute"
   [el k v]
   (assert (keyword? k))
-  (if (constant? v)
+  (if (literal? v)
     (if v
       `(add-attr! ~el ~k ~v))
     `(let [v# ~v]
@@ -41,7 +41,8 @@
      (str/join " " classes)
      id]))
 
-(defmacro create-element [namespace-uri tag is]
+(defmacro create-element
+  [namespace-uri tag is]
   (if namespace-uri
     (if is
       `(.createElementNS js/document ~namespace-uri ~tag ~is)
@@ -50,7 +51,14 @@
       `(.createElement js/document ~tag ~is)
       `(.createElement js/document ~tag))))
 
-(defmacro compile-compound [[node-key & rest]]
+(defmacro compile-child
+  [el data]
+  (cond
+    (literal? data) `(.appendChild ~el (.createTextNode js/document ~data))
+    :else `(.appendChild ~el (node ~data))))
+
+(defmacro compile-vector
+  [[node-key & rest]]
   (let [literal-attrs (when (map? (first rest)) (first rest))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
@@ -70,10 +78,11 @@
            [`(doseq [[k# v#] ~var-attrs]
                (when v# (.setAttribute ~el (name k#) v#)))])
        ~@(for [c children]
-           `(.appendChild ~el (node ~c)))
+           `(compile-child ~el ~c))
        ~el)))
 
-(defmacro node [data]
+(defmacro node
+  [data]
   (if (vector? data)
-   `(compile-compound ~data)
+   `(compile-vector ~data)
    `(hipo.template/->node-like ~data)))
