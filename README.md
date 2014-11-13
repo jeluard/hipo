@@ -26,21 +26,6 @@ Templating syntax is based on [Hiccup](https://github.com/weavejester/hiccup/), 
       [:span.text (str "word" r)])]) ;; => [object HTMLElement]
 ```
 
-The `deftemplate` macro is useful syntactic sugar for defining a function that returns a DOM node.
-
-```clojure
-(ns …
-  (:require [hipo.core])
-  (:use-macros
-    [hipo.macros :only [node deftemplate]]))
-
-(defn simple-template [cat]
-  (node [:img {:src cat}]))
-
-(deftemplate simple-template [cat]
-  [:img {:src cat}])
-```
-
 ### Type-Hinting Template Macros
 
 One caveat of using the compile-macro is that if you have a compound element (a vector element) and want to have a non-literal map as the attributes (the second element of the vector), then you need to use <code>^:attrs</code> meta-data so the compiler knows to process this symbol as a map of attributes in the runtime system. Here's an example:
@@ -57,7 +42,7 @@ For all pull requests, please ensure your tests pass (or add test cases) before 
 
 ## Credits
 
-Initial code comes from the great [dommy](https://github.com/Prismatic/dommy) library which is now focused on DOM manipulation.
+Initial code comes from the great [dommy](https://github.com/Prismatic/dommy) library which is now focused on DOM manipulation. The original dommy code is available as hipo [0.1.0](https://github.com/jeluard/hipo/tree/0.1.0).
 
 ## License
 

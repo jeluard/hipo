@@ -77,13 +77,3 @@
   (if (vector? data)
    `(compile-compound ~data)
    `(hipo.template/->node-like ~data)))
-
-(defmacro deftemplate [name args & node-forms]
-  `(defn ~name ~args
-     ~(if (next node-forms)
-        (let [doc-frag (gensym "frag")]
-          `(let [~doc-frag (.createDocumentFragment js/document)]
-             ~@(for [el node-forms]
-                 `(.appendChild ~doc-frag (node ~el)))
-             ~doc-frag))
-        `(node ~(first node-forms)))))

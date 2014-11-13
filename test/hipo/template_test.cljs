@@ -2,7 +2,7 @@
   (:require [cemerick.cljs.test :as test]
             [hipo.template :as template])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
-                   [hipo.macros :refer [deftemplate node]]))
+                   [hipo.macros :refer [node]]))
 
 (deftest simple-template
   (is (= "B" (-> [:b] template/node .-tagName)))
@@ -106,72 +106,6 @@
     (doseq [e [e1 e2]] (is (-> e .-tagName (= "DIV"))))
     (doseq [e [e1 e2]] (is (= "content" (.-textContent e))))
     (doseq [e [e1 e2]] (is (= "my-custom-div" (.getAttribute e "is"))))))
-
-(deftemplate simple-template [[href anchor]]
-  [:a.anchor {:href href} ^:text anchor])
-
-(deftest  deftemplate
-  (let [elem (simple-template ["http://somelink.html" "some-text"])]
-    (is (= (.-className elem) "anchor"))
-    (is (= (.-href elem) "http://somelink.html/"))
-    (is (= (.-text elem) "some-text"))))
-
-(deftemplate nested-template [n]
-  [:ul.class1 (for [i (range n)] [:li i])])
-
-(deftest nested-deftemplate
-  (is (= "<ul class=\"class1\"><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>"
-         (.-outerHTML (nested-template 5)))))
-
-
-(deftemplate compound-template []
-  [:span "foo"]
-  [:span "bar"])
-
-(deftest compound-template-test
-  (let [frag (compound-template)]
-    (is (= 2 (-> frag .-childNodes .-length)))
-    (is (= "<span>foo</span>" (-> frag .-firstChild .-outerHTML)))
-    (is (= "<span>bar</span>" (-> frag .-lastChild .-outerHTML)))))
-
-(deftemplate single-template-expression []
-  (for [s ["foo" "bar"]] [:span s]))
-
-(deftest single-template-expression-test
-  (let [frag (single-template-expression)]
-    (is (= 2 (-> frag .-childNodes .-length)))
-    (is (= "<span>foo</span>" (-> frag .-firstChild .-outerHTML)))
-    (is (= "<span>bar</span>" (-> frag .-lastChild .-outerHTML)))))
-
-(deftemplate compound-template-expressions []
-  (for [s ["foo" "bar"]] [:span s])
-  [:span "wtf"])
-
-(deftest compound-template-expressions-test
-  (let [frag (compound-template-expressions)]
-    (is (= 3 (-> frag .-childNodes .-length)))
-    (is (= "<span>foo</span>" (-> frag .-firstChild .-outerHTML)))
-    (is (= "<span>wtf</span>" (-> frag .-lastChild .-outerHTML)))))
-
-(deftemplate nil-template []
-  nil)
-
-(deftest nil-in-template
-  (is (= "<span></span>"
-         (.-outerHTML (template/node [:span nil]))))
-  (is (= "<ul><li>0</li><li>2</li></ul>"
-         (.-outerHTML (template/node [:ul (for [i (range 3)]
-                                            (when (even? i)
-                                              [:li i]))])))))
-(deftest nil-template-test
-  (is (= 0 (-> (nil-template) .-childNodes .-length))))
-
-(deftemplate span-wrapper [content]
-  [:span content])
-
-(deftest empty-string-in-template
-  (is (= "<span></span>"
-         (.-outerHTML (span-wrapper "")))))
 
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (node [:p]))))
