@@ -6,9 +6,9 @@
 
 (defn literal?
   [o]
-  (or (string? o) (number? o) (true? o) (false? o) (keyword? o) (symbol? o) (char? o) (nil? o)))
+  (or (string? o) (number? o) (true? o) (false? o) (nil? o)))
 
-(defmacro add-attr!
+(defmacro set-attr!
   [el k v]
   (cond
     (identical? k :id)
@@ -18,16 +18,16 @@
     :else
     `(.setAttribute ~el ~(name k) ~v)))
 
-(defmacro compile-add-attr!
+(defmacro compile-set-attr!
   "compile-time add attribute"
   [el k v]
   (assert (keyword? k))
   (if (literal? v)
     (if v
-      `(add-attr! ~el ~k ~v))
+      `(set-attr! ~el ~k ~v))
     `(let [v# ~v]
        (if v#
-         (add-attr! ~el ~k v#)))))
+         (set-attr! ~el ~k v#)))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
@@ -41,7 +41,7 @@
      (str/join " " classes)
      id]))
 
-(defmacro create-element
+(defmacro compile-create-element
   [namespace-uri tag is]
   (if namespace-uri
     (if is
@@ -51,13 +51,14 @@
       `(.createElement js/document ~tag ~is)
       `(.createElement js/document ~tag))))
 
-(defmacro compile-child
+(defmacro compile-create-child
   [el data]
   (cond
     (literal? data) `(.appendChild ~el (.createTextNode js/document ~data))
-    :else `(.appendChild ~el (node ~data))))
+    (vector? data) `(.appendChild ~el (compile-create-vector ~data))
+    :else `(hipo.template/create-children ~el ~data)))
 
-(defmacro compile-vector
+(defmacro compile-create-vector
   [[node-key & rest]]
   (let [literal-attrs (when (map? (first rest)) (first rest))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
@@ -67,22 +68,26 @@
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
-    `(let [~el (create-element ~element-ns ~(name tag) ~is)]
+    `(let [~el (compile-create-element ~element-ns ~(name tag) ~is)]
        ~@(when-not (empty? class-str)
            [`(set! (.-className ~el) ~class-str)])
        ~@(when id
            [`(set! (.-id ~el) ~id)])
        ~@(for [[k v] literal-attrs]
-           `(compile-add-attr! ~el ~k ~v))
+           `(compile-set-attr! ~el ~k ~v))
        ~@(when var-attrs
            [`(doseq [[k# v#] ~var-attrs]
                (when v# (.setAttribute ~el (name k#) v#)))])
        ~@(for [c children]
-           `(compile-child ~el ~c))
+           `(compile-create-child ~el ~c))
        ~el)))
 
-(defmacro node
-  [data]
-  (if (vector? data)
-   `(compile-vector ~data)
-   `(hipo.template/->node-like ~data)))
+(defmacro create
+  [& data]
+  (if (and (= 1 (count data)) (vector? (first data)))
+    `(compile-create-vector ~(first data))
+    (let [f (gensym "f")]
+      `(let [~f (.createDocumentFragment js/document)]
+         ~@(for [o data]
+           `(compile-create-child ~f ~o))
+         ~f))))

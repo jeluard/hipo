@@ -4,8 +4,9 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defprotocol PElement
-  (-elem [this] "return the element representation of this"))
+(defn literal?
+  [o]
+  (or (string? o) (number? o) (true? o) (false? o) (nil? o)))
 
 (defn- ^boolean class-match?
   "does class-name string have class starting at index idx.
@@ -78,7 +79,7 @@
                (> base-idx 0) (.substring node-str 0 base-idx)
                (zero? base-idx) "div"
                :else node-str)
-         node (create-element (when (+svg-tags+ tag) +svg-ns+)
+         el (create-element (when (+svg-tags+ tag) +svg-ns+)
 
                               tag is)]
      (when (>= base-idx 0)
@@ -88,114 +89,34 @@
                       (.substring str 0 next-idx)
                       str)]
            (case (.charAt frag 0)
-             \. (add-class! node (.substring frag 1))
-             \# (.setAttribute node "id" (.substring frag 1)))
+             \. (add-class! el (.substring frag 1))
+             \# (.setAttribute el "id" (.substring frag 1)))
            (when (>= next-idx 0)
              (recur (.substring str next-idx))))))
-     node)))
+     el)))
 
-(defn throw-unable-to-make-node [node-data]
-  (throw (str "Don't know how to make node from: " (pr-str node-data))))
-
-(defn ->document-fragment
-  "take data and return a document fragment"
-  ([data]
-     (->document-fragment (.createDocumentFragment js/document) data))
-  ([result-frag data]
-     (cond
-      (satisfies? PElement data)
-      (do (.appendChild result-frag (-elem data))
-          result-frag)
-
-      (seq? data)
-      (do (doseq [child data] (->document-fragment result-frag child))
-          result-frag)
-
-      (nil? data)
-      result-frag
-
-      :else
-      (throw-unable-to-make-node data))))
-
-(defn ->node-like
-  "take data and return DOM node if it satisfies PElement and tries to
-   make a document fragment otherwise"
-  [data]
-  (if (satisfies? PElement data)
-    (-elem data)
-    (->document-fragment data)))
-
-(defn compound-element
+(defn create-vector
   "element with either attrs or nested children [:div [:span \"Hello\"]]"
   [[tag-name maybe-attrs & children]]
-  (let [attrs (when (and (map? maybe-attrs)
-                         (not (satisfies? PElement maybe-attrs)))
+  (let [attrs (when (map? maybe-attrs)
                 maybe-attrs)
         children  (if attrs children (cons maybe-attrs children))
-        n (base-element tag-name (:is attrs))]
+        el (base-element tag-name (:is attrs))]
     (doseq [[k v] attrs]
       (if (= :class k)
-        (add-class! n v)
-        (when v (.setAttribute n (name k) v))))
-    (.appendChild n (->node-like children))
-    n))
+        (add-class! el v)
+        (when v (.setAttribute el (name k) v))))
+    (when children
+      (create-children el children))
+    el))
 
-(extend-protocol PElement
-  js/Element
-  (-elem [this] this)
-
-  js/Comment
-  (-elem [this] this)
-
-  js/Text
-  (-elem [this] this)
-
-  PersistentVector
-  (-elem [this] (compound-element this))
-
-  number
-  (-elem [this] (.createTextNode js/document (str this)))
-
-  string
-  (-elem [this]
-    (if (keyword? this)
-      (base-element this)
-      (.createTextNode js/document (str this)))))
-
-;; extend additional prototypes, which might not be available on all
-;; versions of IE or phantom
-
-(when (exists? js/HTMLElement)
-  (extend-protocol PElement
-    js/HTMLElement
-    (-elem [this] this)))
-
-(when (exists? js/DocumentFragment)
-  (extend-protocol PElement
-    js/DocumentFragment
-    (-elem [this] this)))
-
-(when (exists? js/Document)
-  (extend-protocol PElement
-    js/Document
-    (-elem [this] this)))
-
-(when (exists? js/HTMLDocument)
-  (extend-protocol PElement
-    js/HTMLDocument
-    (-elem [this] this)))
-
-(when (exists? js/SVGElement)
-  (extend-protocol PElement
-    js/SVGElement
-    (-elem [this] this)))
-
-(when (exists? js/Window)
-  (extend-protocol PElement
-    js/Window
-    (-elem [this] this)))
-
-(defn node [data]
-  (if (satisfies? PElement data)
-    (-elem data)
-    (throw-unable-to-make-node data)))
+(defn create-children
+  [el data]
+  (cond
+    (literal? data) (.appendChild el (.createTextNode js/document data))
+    (vector? data) (.appendChild el (create-vector data))
+    (seq? data)
+    (doseq [o data]
+      (create-children el o))
+    :else
+    (throw (str "Don't know how to make node from: " (pr-str data)))))
