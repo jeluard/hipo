@@ -20,6 +20,13 @@
     (is (= "1" (.getAttribute e "attr"))))
   (let [e (create [:div#id {:class "class1 class2"}])]
     (is (= "class1 class2" (.-className e))))
+  (let [e (create [:div#id.class1 {:class "class2 class3"}])]
+    (is (= "class1 class2 class3" (.-className e))))
+  (let [cs "class2 class3"
+        e (create [:div (list [:div#id.class1 {:class cs}])])]
+    (is (= "class1 class2 class3" (.-className (.-firstChild e)))))
+  (let [e (create [:div.class1 ^:attrs (merge {:data-attr ""} {:class "class2 class3"})])]
+    (is (= "class1 class2 class3" (.-className e))))
   (let [e (create [:div (interpose [:br] (repeat 3 "test"))])]
     (is (= 5 (.. e -childNodes -length)))
     (is (= "test" (.. e -firstChild -textContent))))

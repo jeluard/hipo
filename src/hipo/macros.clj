@@ -13,8 +13,6 @@
   (cond
     (identical? k :id)
     `(set! (.-id ~el) ~v)
-    (identical? k :class)
-    `(set! (.-className ~el) (.trim (str (.-className ~el) " " ~v)))
     :else
     `(.setAttribute ~el ~(name k) ~v)))
 
@@ -60,20 +58,21 @@
 
 (defmacro compile-create-vector
   [[node-key & rest]]
-  (let [literal-attrs (when (map? (first rest)) (first rest))
+  (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
-        children (drop (if (or literal-attrs var-attrs) 1 0) rest)
+        children (if (or literal-attrs var-attrs) (drop 1 rest) rest)
         [tag class-str id] (parse-keyword node-key)
+        class-str (if-let [c (:class literal-attrs)] (if-not (str/blank? class-str) (str class-str " " c) c) class-str)
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
-    `(let [~el (compile-create-element ~element-ns ~(name tag) ~is)]
+    `(let [~el (compile-create-element ~element-ns ~tag ~is)]
        ~@(when-not (empty? class-str)
            [`(set! (.-className ~el) ~class-str)])
        ~@(when id
            [`(set! (.-id ~el) ~id)])
-       ~@(for [[k v] literal-attrs]
+       ~@(for [[k v] (dissoc literal-attrs :class)]
            `(compile-set-attr! ~el ~k ~v))
        ~@(when var-attrs
            [`(doseq [[k# v#] ~var-attrs]
