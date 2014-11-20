@@ -1,4 +1,4 @@
-(ns hipo.macros
+(ns hipo.compiler
   (:require [clojure.string :as str]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
@@ -54,7 +54,7 @@
   (cond
     (literal? data) `(.appendChild ~el (.createTextNode js/document ~data))
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
-    :else `(hipo.template/create-children ~el ~data)))
+    :else `(hipo.interpreter/create-children ~el ~data)))
 
 (defmacro compile-create-vector
   [[node-key & rest]]
@@ -80,13 +80,3 @@
        ~@(for [c children]
            `(compile-create-child ~el ~c))
        ~el)))
-
-(defmacro create
-  [& data]
-  (if (and (= 1 (count data)) (vector? (first data)))
-    `(compile-create-vector ~(first data))
-    (let [f (gensym "f")]
-      `(let [~f (.createDocumentFragment js/document)]
-         ~@(for [o data]
-           `(compile-create-child ~f ~o))
-         ~f))))

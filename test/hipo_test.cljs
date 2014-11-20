@@ -1,7 +1,7 @@
-(ns hipo.template-test
+(ns hipo.hipo-test
   (:require [cemerick.cljs.test :as test])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
-                   [hipo.macros :refer [create]]))
+                   [hipo :refer [create]]))
 
 (deftest simple-template
   (is (= "B" (.-tagName (create [:b]))))

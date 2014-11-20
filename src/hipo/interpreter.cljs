@@ -1,4 +1,4 @@
-(ns hipo.template
+(ns hipo.interpreter
   (:require [clojure.string :as str]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
