@@ -102,6 +102,8 @@
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
+    (if (and (empty? class-str) (nil? id) (empty? literal-attrs) (empty? var-attrs) (empty? children))
+      `(compile-create-element ~element-ns ~tag ~is)
     `(let [~el (compile-create-element ~element-ns ~tag ~is)]
        ~@(when-not (empty? class-str)
            [`(set! (.-className ~el) ~class-str)])
@@ -114,4 +116,4 @@
                (when v# (.setAttribute ~el (name k#) v#)))])
        ~@(for [c children]
            `(compile-create-child ~el ~c))
-       ~el)))
+       ~el))))

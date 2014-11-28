@@ -125,12 +125,9 @@
   (let [e (create [:div (when true [:div])])]
     (is (false? (h/partially-compiled? e)))
     (is (= 1 (.. e -childNodes -length))))
-  (let [e (create [:div (when false [:div "1"] [:div "2"])])]
+  (let [e (create [:div (when false [:div])])]
     (is (false? (h/partially-compiled? e)))
     (is (= 0 (.. e -childNodes -length))))
-  (let [e (create [:div (when true [:div "1"] [:div "2"])])]
-    (is (false? (h/partially-compiled? e)))
-    (is (= 1 (.. e -childNodes -length))))
   (let [e (create [:div (list [:div "1"] [:div "2"])])]
     (is (false? (h/partially-compiled? e)))
     (is (= 2 (.. e -childNodes -length)))))
