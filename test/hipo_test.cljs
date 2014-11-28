@@ -1,5 +1,6 @@
 (ns hipo.hipo-test
-  (:require [cemerick.cljs.test :as test])
+  (:require [cemerick.cljs.test :as test]
+            [hipo :as h])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo :refer [create]]))
 
@@ -100,3 +101,36 @@
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (create [:p]))))
   (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (create [:circle])))))
+
+(deftest partially-compiled
+  (is (false? (h/partially-compiled? (create [:div]))))
+  (is (true? (h/partially-compiled? (create [:div (conj [] :div)])))))
+
+(deftest compile-form
+  (let [e (create [:ul (for [i (range 5)] [:li (str i)])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 5 (.. e -childNodes -length))))
+  (let [e (create [:div (if true [:div])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 1 (.. e -childNodes -length))))
+  (let [e (create [:div (if true nil [:div])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (create [:div (if false [:div])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (create [:div (if false [:div] nil)])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (create [:div (when true [:div])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 1 (.. e -childNodes -length))))
+  (let [e (create [:div (when false [:div "1"] [:div "2"])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (create [:div (when true [:div "1"] [:div "2"])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 1 (.. e -childNodes -length))))
+  (let [e (create [:div (list [:div "1"] [:div "2"])])]
+    (is (false? (h/partially-compiled? e)))
+    (is (= 2 (.. e -childNodes -length)))))

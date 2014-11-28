@@ -51,6 +51,13 @@
         (create-children el children))
       el)))
 
+(defn mark-as-partially-compiled!
+  [el]
+  (loop [el el]
+    (if-let [pel (.-parentElement el)]
+      (recur pel)
+      (aset el "hipo-partially-compiled" true))))
+
 (defn create-children
   [el data]
   (cond
