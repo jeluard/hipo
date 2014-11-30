@@ -36,7 +36,7 @@
         classes (map #(.substring ^String % 1) (re-seq #"\.[^.*]*" node-str))
         id (first (map #(.substring ^String % 1) (re-seq #"#[^.*]*" node-str)))]
     [(if (empty? node-tag) "div" node-tag)
-     (str/join " " classes)
+     (when-not (empty? classes) (str/join " " classes))
      id]))
 
 (defmacro compile-create-element
@@ -91,24 +91,34 @@
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
     :else (compile-form [el data])))
 
+(defmacro compile-class
+  [literal-attrs class-keyword]
+  (let [literal-class (:class literal-attrs)]
+    (if-not (nil? class-keyword)
+      (cond
+        (nil? literal-class) class-keyword
+        (string? literal-class) (str class-keyword " " literal-class)
+        :else `(str ~(str class-keyword " ") ~literal-class))
+      literal-class)))
+
 (defmacro compile-create-vector
   [[node-key & rest]]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
         children (if (or literal-attrs var-attrs) (drop 1 rest) rest)
-        [tag class-str id] (parse-keyword node-key)
-        class-str (if-let [c (:class literal-attrs)] (if-not (str/blank? class-str) (str class-str " " c) c) class-str)
+        [tag class-keyword id-keyword] (parse-keyword node-key)
+        class `(compile-class ~literal-attrs ~class-keyword)
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
-    (if (and (empty? class-str) (nil? id) (empty? literal-attrs) (empty? var-attrs) (empty? children))
+    (if (and (nil? class) (nil? id-keyword) (empty? literal-attrs) (empty? var-attrs) (empty? children))
       `(compile-create-element ~element-ns ~tag ~is)
     `(let [~el (compile-create-element ~element-ns ~tag ~is)]
-       ~@(when-not (empty? class-str)
-           [`(set! (.-className ~el) ~class-str)])
-       ~@(when id
-           [`(set! (.-id ~el) ~id)])
+       ~@(when id-keyword
+           [`(set! (.-id ~el) ~id-keyword)])
+       ~@(when class
+           [`(set! (.-className ~el) ~class)])
        ~@(for [[k v] (dissoc literal-attrs :class)]
            `(compile-set-attr! ~el ~k ~v))
        ~@(when var-attrs
