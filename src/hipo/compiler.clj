@@ -122,7 +122,7 @@
         children (if (or literal-attrs var-attrs) (drop 1 rest) rest)
         [tag class-keyword id-keyword] (parse-keyword node-key)
         class (compile-class literal-attrs class-keyword)
-        el (gensym "dom")
+        el (gensym "el")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
     (if (and (nil? rest) (nil? id-keyword) (empty? class-keyword))
