@@ -17,7 +17,7 @@
     `(.setAttribute ~el ~(name k) ~v)))
 
 (defmacro compile-set-attr!
-  "compile-time add attribute"
+  "compile-time set attribute"
   [el k v]
   (assert (keyword? k))
   (if (literal? v)
@@ -91,10 +91,10 @@
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
     :else (compile-form [el data])))
 
-(defmacro compile-class
+(defn compile-class
   [literal-attrs class-keyword]
   (let [literal-class (:class literal-attrs)]
-    (if-not (nil? class-keyword)
+    (if class-keyword
       (cond
         (nil? literal-class) class-keyword
         (string? literal-class) (str class-keyword " " literal-class)
@@ -108,7 +108,7 @@
                     (first rest))
         children (if (or literal-attrs var-attrs) (drop 1 rest) rest)
         [tag class-keyword id-keyword] (parse-keyword node-key)
-        class `(compile-class ~literal-attrs ~class-keyword)
+        class (compile-class literal-attrs class-keyword)
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
@@ -122,8 +122,17 @@
        ~@(for [[k v] (dissoc literal-attrs :class)]
            `(compile-set-attr! ~el ~k ~v))
        ~@(when var-attrs
-           [`(doseq [[k# v#] ~var-attrs]
-               (when v# (.setAttribute ~el (name k#) v#)))])
+           (let [k (gensym "k")
+                 v (gensym "v")]
+             [`(doseq [[~k ~v] ~var-attrs]
+                 (when ~v
+                   ~(if class
+                      `(if (= :class ~k)
+                         (.setAttribute ~el "class" (str ~(str class " ") ~v))
+                         (.setAttribute ~el (name ~k) ~v))
+                      `(.setAttribute ~el (name ~k) ~v))
+                   ))])
+           )
        ~@(for [c children]
            `(compile-create-child ~el ~c))
        ~el))))

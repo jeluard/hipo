@@ -23,6 +23,9 @@
     (is (= "class1 class2" (.-className e))))
   (let [e (create [:div#id.class1 {:class "class2 class3"}])]
     (is (= "class1 class2 class3" (.-className e))))
+  (let [cs "class1 class2"
+        e (create [:div ^:attrs (merge {} {:class cs})])]
+    (is (= "class1 class2" (.-className e))))
   (let [cs "class2 class3"
         e (create [:div (list [:div#id.class1 {:class cs}])])]
     (is (= "class1 class2 class3" (.-className (.-firstChild e)))))
