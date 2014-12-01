@@ -125,7 +125,7 @@
         el (gensym "dom")
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
-    (if (and (nil? class) (nil? id-keyword) (empty? literal-attrs) (empty? var-attrs) (empty? children))
+    (if (and (nil? rest) (nil? id-keyword) (empty? class-keyword))
       `(compile-create-element ~element-ns ~tag ~is)
     `(let [~el (compile-create-element ~element-ns ~tag ~is)]
        ~@(when id-keyword
@@ -143,9 +143,7 @@
                       `(if (= :class ~k)
                          (.setAttribute ~el "class" (str ~(str class " ") ~v))
                          (.setAttribute ~el (name ~k) ~v))
-                      `(.setAttribute ~el (name ~k) ~v))
-                   ))])
-           )
+                      `(.setAttribute ~el (name ~k) ~v))))]))
        ~@(for [c children]
            `(compile-create-child ~el ~c))
        ~el))))
