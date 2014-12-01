@@ -1,5 +1,6 @@
 (ns hipo.compiler
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [cljs.analyzer :as ana]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
@@ -83,11 +84,23 @@
      (hipo.interpreter/mark-as-partially-compiled! ~el)
      (hipo.interpreter/create-children ~el ~data)))
 
+(defn text-compliant-hint?
+  [data env]
+  (when (seq? data)
+    (when-let [f (first data)]
+      (when (symbol? f)
+        (let [t (:tag (ana/resolve-var env f))]
+          (or (= t 'boolean)
+              (= t 'string)
+              (= t 'number)))))))
+
 (defmacro compile-create-child
   [el data]
   (cond
     (nil? data) nil
-    (literal? data) `(.appendChild ~el (.createTextNode js/document ~data))
+    (or (literal? data)
+        (-> data meta :text)
+        (text-compliant-hint? data &env)) `(.appendChild ~el (.createTextNode js/document ~data))
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
     :else (compile-form [el data])))
 

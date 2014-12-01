@@ -134,3 +134,15 @@
   (let [e (create [:div (list [:div "1"] [:div "2"])])]
     (is (false? (h/partially-compiled? e)))
     (is (= 2 (.. e -childNodes -length)))))
+
+(def my-str str)
+
+(deftest hints
+  (let [e (create [:div (+ 1 2)])]
+    (is (false? (h/partially-compiled? e))))
+  (let [e (create [:div (not true)])]
+    (is (false? (h/partially-compiled? e))))
+  (let [e (create [:div (my-str "content")])]
+    (is (true? (h/partially-compiled? e))))
+  (let [e (create [:div ^:text (my-str "content")])]
+    (is (false? (h/partially-compiled? e)))))
