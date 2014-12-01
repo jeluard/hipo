@@ -2,43 +2,92 @@
 
 A ClojureScript DOM templating library based on [hiccup](https://github.com/weavejester/hiccup) syntax.
 
+Hipo is available in clojars as `[hipo "0.2.0"]`.
+
 ## Usage
 
-Add the following dependency to your `project.clj`:
-
-```clojure
-[hipo "0.1.0"]
-```
-
-### Templating
-
-Templating syntax is based on [Hiccup](https://github.com/weavejester/hiccup/), a great HTML library for Clojure. Instead of returning a string of html, hipo's `node` macro returns a DOM node.
+`create` macro converts an hiccup vector into a DOM node that can be directly inserted in a document.
 
 ```clojure
 (ns …
-  (:require [hipo.core])
-  (:use-macros
-    [hipo.macros :only [node]]))
+  (:require-macros [hipo :refer [create]]))
 
-(node
-  [:div#id.class1
-    (for [r (range 2)]
-      [:span.text (str "word" r)])]) ;; => [object HTMLElement]
+(let [el (create [:div#id.class [:span]])]
+  (.appendChild js/document.body el))
 ```
 
-### Type-Hinting Template Macros
+At compile-time JavaScript code is generated from the hiccup representation to minimize DOM node creation cost at the expense of code size.
 
-One caveat of using the compile-macro is that if you have a compound element (a vector element) and want to have a non-literal map as the attributes (the second element of the vector), then you need to use <code>^:attrs</code> meta-data so the compiler knows to process this symbol as a map of attributes in the runtime system. Here's an example:
+The previous hiccup representation would be converted into the following ClojureScript:
 
 ```clojure
-(node [:a ^:attrs (merge m1 m2)])
+(let [el (. js/document createElement "div")]
+  (set! (. el -id) "id")
+  (set! (. el -className) "class")
+  (. el appendChild (. js/document createElement "span"))
+  el)
 ```
 
-## Testing
+itself compiled into the following JavaScript:
 
-For all pull requests, please ensure your tests pass (or add test cases) before submitting. 
+```javascript
+var el = document.createElement("div");
+el.id="id";
+el.className="class";
+el.appendChild(document.createElement("span"));
+```
 
-    $ lein test
+When the hiccup representation can't be fully compiled the remaining hiccup elements are interpreted at runtime. This might happen when functions or parameters are used.
+Once in interpreted mode any nested child will not be compiled even if it is a valid candidate for compilation.
+
+```clojure
+(defn children []
+  (let [data ...] ; some data accessed at runtime
+    (case (:type data)
+      1 [:div "content"]
+      2 [:ul (for [o (:value data)]
+          [:li (str "content-" o)])])))
+
+(create [:div (children)]) ; anything returned by children will be interpreted at runtime
+```
+
+`partially-compiled?` allows to check if some hiccup vector has been partially compiled or not.
+
+```clojure
+(ns …
+  (:require [hipo :as h])
+  (:require-macros [hipo :refer [create]]))
+
+(let [el (create [:div#id.class "content"])]
+  (h/partially-compiled? el)) ; => false
+```
+
+### Type-Hinting
+
+When you know the result of a function call will be converted to an HTML text node (as opposed to an HTML element) the `^:text` metadata can be used as a hint for the compiler to optimise the generated JavaScript code.
+
+```clojure
+(defn my-fn []
+  (str "content"))
+
+(create [:div ^:text (my-fn)])
+```
+
+### Form compilation hook
+
+Some forms can be optimised to increase compilation level.
+
+Default hooks are shipped for `for`, `if`, `when` and `list`. Complex hiccup vectors are then fully compiled:
+
+```clojure
+(defn [s]
+  (create
+    [:div
+      (when s [:h2 s])
+      [:ul
+        (for [i (range 50)]
+          [:li (str "content-" i)])]]))
+```
 
 ## Credits
 
