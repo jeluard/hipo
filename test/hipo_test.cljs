@@ -110,9 +110,10 @@
   (is (true? (h/partially-compiled? (create [:div (conj [] :div)])))))
 
 (deftest compile-form
-  (let [e (create [:ul (for [i (range 5)] [:li (str i)])])]
+  (let [e (create [:ul (for [i (range 5)] [:li "content" ^:text (str i)])])]
     (is (false? (h/partially-compiled? e)))
-    (is (= 5 (.. e -childNodes -length))))
+    (is (= 5 (.. e -childNodes -length)))
+    (is (= "content0" (.. e -firstChild -textContent))))
   (let [e (create [:div (if true [:div])])]
     (is (false? (h/partially-compiled? e)))
     (is (= 1 (.. e -childNodes -length))))

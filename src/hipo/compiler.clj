@@ -94,13 +94,17 @@
               (= t 'string)
               (= t 'number)))))))
 
+(defn text-content?
+  [data env]
+  (or (literal? data)
+      (-> data meta :text)
+      (text-compliant-hint? data env)))
+
 (defmacro compile-create-child
   [el data]
   (cond
     (nil? data) nil
-    (or (literal? data)
-        (-> data meta :text)
-        (text-compliant-hint? data &env)) `(.appendChild ~el (.createTextNode js/document ~data))
+    (text-content? data &env) `(.appendChild ~el (.createTextNode js/document ~data))
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
     :else (compile-form [el data])))
 
@@ -128,22 +132,25 @@
     (if (and (nil? rest) (nil? id-keyword) (empty? class-keyword))
       `(compile-create-element ~element-ns ~tag ~is)
     `(let [~el (compile-create-element ~element-ns ~tag ~is)]
-       ~@(when id-keyword
-           [`(set! (.-id ~el) ~id-keyword)])
-       ~@(when class
-           [`(set! (.-className ~el) ~class)])
+       ~(when id-keyword
+          `(set! (.-id ~el) ~id-keyword))
+       ~(when class
+          `(set! (.-className ~el) ~class))
        ~@(for [[k v] (dissoc literal-attrs :class)]
            `(compile-set-attr! ~el ~k ~v))
-       ~@(when var-attrs
-           (let [k (gensym "k")
-                 v (gensym "v")]
-             [`(doseq [[~k ~v] ~var-attrs]
-                 (when ~v
-                   ~(if class
-                      `(if (= :class ~k)
-                         (.setAttribute ~el "class" (str ~(str class " ") ~v))
-                         (.setAttribute ~el (name ~k) ~v))
-                      `(.setAttribute ~el (name ~k) ~v))))]))
-       ~@(for [c children]
-           `(compile-create-child ~el ~c))
+       ~(when var-attrs
+          (let [k (gensym "k")
+                v (gensym "v")]
+            `(doseq [[~k ~v] ~var-attrs]
+               (when ~v
+                 ~(if class
+                    `(if (= :class ~k)
+                       (.setAttribute ~el "class" (str ~(str class " ") ~v))
+                       (.setAttribute ~el (name ~k) ~v))
+                    `(.setAttribute ~el (name ~k) ~v))))))
+       ~@(when (seq children)
+          (if (every? #(text-content? % &env) children)
+            `[(set! (.-textContent ~el) (str ~@children))]
+            (for [c children]
+              `(compile-create-child ~el ~c))))
        ~el))))
