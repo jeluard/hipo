@@ -10,9 +10,9 @@ Hipo is available in clojars as `[hipo "0.2.0"]`.
 
 ```clojure
 (ns …
-  (:require-macros [hipo :refer [create]]))
+  (:require [hipo :as hipo :include-macros true]))
 
-(let [el (create [:div#id.class [:span]])]
+(let [el (hipo/create [:div#id.class [:span]])]
   (.appendChild js/document.body el))
 ```
 
@@ -48,18 +48,17 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
       2 [:ul (for [o (:value data)]
           [:li (str "content-" o)])])))
 
-(create [:div (children)]) ; anything returned by children will be interpreted at runtime
+(hipo/create [:div (children)]) ; anything returned by children will be interpreted at runtime
 ```
 
 `partially-compiled?` allows to check if some hiccup vector has been partially compiled or not.
 
 ```clojure
 (ns …
-  (:require [hipo :as h])
-  (:require-macros [hipo :refer [create]]))
+  (:require [hipo :as hipo :include-macros true]))
 
-(let [el (create [:div#id.class "content"])]
-  (h/partially-compiled? el)) ; => false
+(let [el (hipo/create [:div#id.class "content"])]
+  (hipo/partially-compiled? el)) ; => false
 ```
 
 ### Type-Hinting
@@ -70,7 +69,7 @@ When you know the result of a function call will be converted to an HTML text no
 (defn my-fn []
   (str "content"))
 
-(create [:div ^:text (my-fn)])
+(hipo/create [:div ^:text (my-fn)])
 ```
 
 ### Form compilation hook
@@ -81,7 +80,7 @@ Default hooks are shipped for `for`, `if`, `when` and `list`. Complex hiccup vec
 
 ```clojure
 (defn [s]
-  (create
+  (hipo/create
     [:div
       (when s [:h2 s])
       [:ul

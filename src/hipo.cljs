@@ -1,4 +1,5 @@
-(ns hipo)
+(ns hipo
+  (:require [hipo.interpreter :as hi]))
 
 (defn partially-compiled?
   [el]
