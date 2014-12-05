@@ -154,3 +154,13 @@
             (for [c children]
               `(compile-create-child ~el ~c))))
        ~el))))
+
+(defmacro compile-create
+  [data]
+  (cond
+    (nil? data) nil
+    (text-content? data &env) `(.createTextNode js/document ~data)
+    (vector? data) `(compile-create-vector ~data)
+    :else `(let [f# (.createDocumentFragment js/document)]
+             (hipo.interpreter/mark-as-partially-compiled! f#)
+             (hipo.interpreter/create-children f# ~data))))

@@ -3,7 +3,7 @@
             [hipo :as hipo :include-macros true])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]))
 
-(deftest simple-template
+(deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))
   (let [e (hipo/create [:span "some text"])]
     (is (= "SPAN" (.-tagName e)))
@@ -44,19 +44,13 @@
   (let [e (hipo/create[:div (for [x [1 2]] [:span {:id (str "id" x)} (str "span" x)])] )]
     (is (= "<span id=\"id1\">span1</span><span id=\"id2\">span2</span>" (.-innerHTML e)))))
 
-(deftest multiple-template
-  (let [e (hipo/create [:div] [:div])]
-    (is (= 2 (.. e -childNodes -length))))
-  (let [e (hipo/create (list [:div] [:div]))]
-    (is (= 2 (.. e -childNodes -length)))))
-
-(deftest attrs-template
+(deftest attrs
   (let [e (hipo/create [:a ^:attrs (merge {} {:href "http://somelink"}) "anchor"])]
     (is (-> e .-tagName (= "A")))
     (is (= "anchor" (.-textContent e)))
     (is (= "http://somelink" (.getAttribute e "href")))))
 
-(deftest nested-template
+(deftest nested
   ;; test html for example list form
   ;; note: if practice you can write the direct form (without the list) you should.
   (let [spans (for [i (range 2)] [:span (str "span" i)])
@@ -77,6 +71,16 @@
         e1 (hipo/create [:div.class1 (list spans end)])
         e2 (hipo/create [:div.class1 spans end])]
     (is (= (.-innerHTML e1) (.-innerHTML e2)))))
+
+(defn my-button [s] [:button s])
+
+(deftest function
+  (let [e (hipo/create (my-button "label"))]
+    (is (= "BUTTON" (.-tagName e)))
+    (is (= "label" (.-textContent e))))
+  (let [e (hipo/create [:div (my-button "label") (my-button "label")])]
+    (is (= "BUTTON" (.-tagName (.-firstChild e))))
+    (is (= "label" (.-textContent (.-firstChild e))))))
 
 (deftest boolean-attribute
   (let [e1 (hipo/create [:option {:selected true} "some text"])
