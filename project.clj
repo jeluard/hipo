@@ -17,6 +17,7 @@
                       :optimizations :whitespace
                       :pretty-print true}}}
    :test-commands {"unit" ["phantomjs" :runner "dev-resources/document-register-element.js" "target/unit-test.js"]}}
-  :aliases {"test" ["do" "clean" ["cljsbuild" "test"]]}
+  :aliases {"clean-test" ["do" "clean," "cljsbuild" "clean," "cljsbuild" "test"]
+            "clean-install" ["do" "clean," "cljsbuild" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
   :min-lein-version "2.5.0")
