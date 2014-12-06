@@ -1,6 +1,7 @@
 (ns hipo.hipo-test
   (:require [cemerick.cljs.test :as test]
-            [hipo :as hipo :include-macros true])
+            [hipo :as hipo :include-macros]
+            [hipo.interpreter :refer [set-attribute!]])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]))
 
 (deftest simple
@@ -97,6 +98,19 @@
     (is (nil? (.getAttribute e "on-click"))))
   (let [e (hipo/create (my-div))]
     (is (nil? (.getAttribute e "on-click")))))
+
+(defn my-custom [] [:div {:test3 1 :test4 1}])
+
+(defmethod set-attribute! "test4"
+  [[el a v]]
+  (.setAttribute el a (* 2 v)))
+
+(deftest custom-attribute
+  (let [e (hipo/create [:div {:test 1 :test2 1} (my-custom)])]
+    (is (= "1" (.getAttribute e "test")))
+    (is (= "2" (.getAttribute e "test2")))
+    (is (= "1" (.getAttribute (.-firstChild e) "test3")))
+    (is (= "2" (.getAttribute (.-firstChild e) "test4")))))
 
 (deftest custom-elements
   (is (exists? (.-registerElement js/document)))

@@ -39,6 +39,8 @@ el.addEventListener("click", function() {console.log("click")});
 el.appendChild(document.createElement("span"));
 ```
 
+Note that the hiccup syntax is extended to handle all properties whose name starts with **on-** as event listener registration.
+
 When the hiccup representation can't be fully compiled the remaining hiccup elements are interpreted at runtime. This might happen when functions or parameters are used.
 Once in interpreted mode any nested child will not be compiled even if it is a valid candidate for compilation.
 
@@ -73,6 +75,34 @@ When you know the result of a function call will be converted to an HTML text no
 
 (hipo/create [:div ^:text (my-fn)])
 ```
+
+### Attribute handling hook
+
+How attributes are handled can be customized both at compilation time and runtime.
+
+```clojure
+; this is a clj file
+(ns ..
+  (:require [hipo.compiler :refer [compile-set-attribute!]]))
+
+(defmacro fake []) ; this is needed or ClojureScript compiler will ignore this file
+
+(defmethod compile-set-attribute! "test"
+  [[el a v]]
+  `(.setAttribute ~el ~a ~(* 2 v)))
+```
+
+```clojure
+; this is a cljs file
+(ns ..
+  (:require [hipo.interpreter :refer [set-attribute!]]))
+
+(defmethod set-attribute! "test"
+  [[el a v]]
+  (.setAttribute el a (* 2 v)))
+```
+
+This might be useful to handle special events not supported natively (e.g. **on-tap**) or to implement more efficient methods of setting attributes (e.g. via native attributes).
 
 ### Form compilation hook
 

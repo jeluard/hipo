@@ -31,6 +31,15 @@
 
 (declare create-children)
 
+(defmulti set-attribute! #(second %))
+
+(defmethod set-attribute! :default
+  [[el a v]]
+  (if (= 0 (.indexOf a "on-"))
+    (let [e (.substring a 3)]
+      (.addEventListener el e v))
+    (.setAttribute el a v)))
+
 (defn create-vector
   [[node-key & rest]]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
@@ -46,10 +55,7 @@
         (set! (.-id el) id))
       (doseq [[k v] (dissoc literal-attrs :class :is)]
         (when v
-          (let [s (name k)]
-            (if (= 0 (.indexOf s "on-"))
-              (.addEventListener el (.substring s 3) v)
-              (.setAttribute el s v)))))
+          (set-attribute! [el (name k) v])))
       (when children
         (create-children el children))
       el)))

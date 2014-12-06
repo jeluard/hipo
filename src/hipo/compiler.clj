@@ -9,26 +9,30 @@
   [o]
   (or (string? o) (number? o) (true? o) (false? o)))
 
-(defmacro set-attr!
-  [el k v]
-  (let [s (name k)]
-    (cond
-      (= s "id")
-      `(set! (.-id ~el) ~v)
-      (= 0 (.indexOf s "on-")) (let [e (.substring s 3)] `(.addEventListener ~el ~e ~v))
-      :else
-      `(.setAttribute ~el ~s ~v))))
+(defmulti compile-set-attribute! #(second %))
 
-(defmacro compile-set-attr!
+(defmethod compile-set-attribute! :default
+  [[el a v]]
+  (cond
+    (= a "id")
+    `(set! (.-id ~el) ~v)
+    (= 0 (.indexOf a "on-"))
+    (let [e (.substring a 3)] `(.addEventListener ~el ~e ~v))
+    :else
+    `(.setAttribute ~el ~a ~v)))
+
+(defmacro compile-set-attribute!*
   "compile-time set attribute"
   [el k v]
   {:pre [(keyword? k)]}
-  (if (literal? v)
-    (if v
-      `(set-attr! ~el ~k ~v))
-    `(let [v# ~v]
-       (if v#
-         (set-attr! ~el ~k v#)))))
+  (let [a (name k)]
+    (if (literal? v)
+      (if v
+        (compile-set-attribute! [el a v]))
+      (let [ve (gensym "v")]
+        `(let [~ve ~v]
+           (if ~ve
+             ~(compile-set-attribute! [el a ve])))))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
@@ -139,7 +143,7 @@
        ~(when class
           `(set! (.-className ~el) ~class))
        ~@(for [[k v] (dissoc literal-attrs :class)]
-           `(compile-set-attr! ~el ~k ~v))
+           `(compile-set-attribute!* ~el ~k ~v))
        ~(when var-attrs
           (let [k (gensym "k")
                 v (gensym "v")]
@@ -148,8 +152,8 @@
                  ~(if class
                     `(if (= :class ~k)
                        (.setAttribute ~el "class" (str ~(str class " ") ~v))
-                       (.setAttribute ~el (name ~k) ~v))
-                    `(.setAttribute ~el (name ~k) ~v))))))
+                       (hipo.interpreter/set-attribute! [~el (name ~k) ~v]))
+                    `(hipo.interpreter/set-attribute! [~el (name ~k) ~v]))))))
        ~@(when (seq children)
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
