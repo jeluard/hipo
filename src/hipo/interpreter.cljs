@@ -46,7 +46,10 @@
         (set! (.-id el) id))
       (doseq [[k v] (dissoc literal-attrs :class :is)]
         (when v
-          (.setAttribute el (name k) v)))
+          (let [s (name k)]
+            (if (= 0 (.indexOf s "on-"))
+              (.addEventListener el (.substring s 3) v)
+              (.setAttribute el s v)))))
       (when children
         (create-children el children))
       el)))

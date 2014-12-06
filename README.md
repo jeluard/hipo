@@ -12,7 +12,7 @@ Hipo is available in clojars as `[hipo "0.2.0"]`.
 (ns …
   (:require [hipo :as hipo :include-macros true]))
 
-(let [el (hipo/create [:div#id.class [:span]])]
+(let [el (hipo/create [:div#id.class {:on-click #(.log js/console "click")} [:span]])]
   (.appendChild js/document.body el))
 ```
 
@@ -24,6 +24,7 @@ The previous hiccup representation would be converted into the following Clojure
 (let [el (. js/document createElement "div")]
   (set! (. el -id) "id")
   (set! (. el -className) "class")
+  (. el addEventListener "click" #(.log js/console "click"))
   (. el appendChild (. js/document createElement "span"))
   el)
 ```
@@ -34,6 +35,7 @@ itself compiled into the following JavaScript:
 var el = document.createElement("div");
 el.id="id";
 el.className="class";
+el.addEventListener("click", function() {console.log("click")});
 el.appendChild(document.createElement("span"));
 ```
 

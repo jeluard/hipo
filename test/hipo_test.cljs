@@ -90,6 +90,14 @@
     (is (nil? (.getAttribute e2 "selected")))
     (is (nil? (.getAttribute e3 "selected")))))
 
+(defn my-div [] [:div {:on-click (fn [])}])
+
+(deftest listener
+  (let [e (hipo/create [:div {:on-click (fn [])}])]
+    (is (nil? (.getAttribute e "on-click"))))
+  (let [e (hipo/create (my-div))]
+    (is (nil? (.getAttribute e "on-click")))))
+
 (deftest custom-elements
   (is (exists? (.-registerElement js/document)))
   (.registerElement js/document "my-custom-div" #js {:prototype (js/Object.create (.-prototype js/HTMLDivElement) #js {:test #js {:get (fn[] "")}}) :extends "div"})

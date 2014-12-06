@@ -11,16 +11,18 @@
 
 (defmacro set-attr!
   [el k v]
-  (cond
-    (identical? k :id)
-    `(set! (.-id ~el) ~v)
-    :else
-    `(.setAttribute ~el ~(name k) ~v)))
+  (let [s (name k)]
+    (cond
+      (= s "id")
+      `(set! (.-id ~el) ~v)
+      (= 0 (.indexOf s "on-")) (let [e (.substring s 3)] `(.addEventListener ~el ~e ~v))
+      :else
+      `(.setAttribute ~el ~s ~v))))
 
 (defmacro compile-set-attr!
   "compile-time set attribute"
   [el k v]
-  (assert (keyword? k))
+  {:pre [(keyword? k)]}
   (if (literal? v)
     (if v
       `(set-attr! ~el ~k ~v))
