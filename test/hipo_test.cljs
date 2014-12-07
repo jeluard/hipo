@@ -2,7 +2,8 @@
   (:require [cemerick.cljs.test :as test]
             [hipo :as hipo :include-macros]
             [hipo.interpreter :refer [set-attribute!]])
-  (:require-macros [cemerick.cljs.test :refer [deftest is]]))
+  (:require-macros [cemerick.cljs.test :refer [deftest is]]
+                   [hipo.hipo-test]))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))

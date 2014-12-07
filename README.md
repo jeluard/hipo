@@ -82,10 +82,8 @@ How attributes are handled can be customized both at compilation time and runtim
 
 ```clojure
 ; this is a clj file
-(ns ..
+(ns my-custom-methods
   (:require [hipo.compiler :refer [compile-set-attribute!]]))
-
-(defmacro fake []) ; this is needed or ClojureScript compiler will ignore this file
 
 (defmethod compile-set-attribute! "test"
   [[el a v]]
@@ -95,11 +93,14 @@ How attributes are handled can be customized both at compilation time and runtim
 ```clojure
 ; this is a cljs file
 (ns ..
-  (:require [hipo.interpreter :refer [set-attribute!]]))
+  (:require [hipo.interpreter :refer [set-attribute!]]
+            [my-custom-methods]))
 
 (defmethod set-attribute! "test"
   [[el a v]]
   (.setAttribute el a (* 2 v)))
+
+(create [:div {:test 1}]) ; will set "test" attribute to 2
 ```
 
 This might be useful to handle special events not supported natively (e.g. **on-tap**) or to implement more efficient methods of setting attributes (e.g. via native attributes).
