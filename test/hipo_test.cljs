@@ -117,6 +117,16 @@
     (is (= "1" (.getAttribute (.-firstChild e) "test3")))
     (is (= "2" (.getAttribute (.-firstChild e) "test4")))))
 
+(defn my-nil [] [:div nil "content" nil])
+
+(deftest nil-children
+  (let [e (hipo/create [:div nil "content" nil])]
+    (is (not (hipo/partially-compiled? e)))
+    (is (= "content" (.-textContent e))))
+  (let [e (hipo/create (my-nil))]
+    (is (hipo/partially-compiled? e))
+    (is (= "content" (.-textContent (.-firstChild e))))))
+
 (deftest custom-elements
   (is (exists? (.-registerElement js/document)))
   (.registerElement js/document "my-custom-div" #js {:prototype (js/Object.create (.-prototype js/HTMLDivElement) #js {:test #js {:get (fn[] "")}}) :extends "div"})

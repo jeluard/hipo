@@ -6,7 +6,7 @@
 
 (defn literal?
   [o]
-  (or (string? o) (number? o) (true? o) (false? o) (nil? o)))
+  (or (string? o) (number? o) (true? o) (false? o)))
 
 (defn- create-element [namespace-uri tag is]
   (if namespace-uri
@@ -70,6 +70,7 @@
 (defn create-children
   [el data]
   (cond
+    (nil? data) nil
     (literal? data) (.appendChild el (.createTextNode js/document data))
     (vector? data) (.appendChild el (create-vector data))
     (seq? data)
