@@ -169,4 +169,5 @@
     (vector? data) `(compile-create-vector ~data)
     :else `(let [f# (.createDocumentFragment js/document)]
              (hipo.interpreter/mark-as-partially-compiled! f#)
-             (hipo.interpreter/create-children f# ~data))))
+             (hipo.interpreter/create-children f# ~data)
+             f#)))
