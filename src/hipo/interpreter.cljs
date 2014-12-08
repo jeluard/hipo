@@ -26,10 +26,8 @@
         classes (map #(.substring ^String % 1) (re-seq #"\.[^.*]*" node-str))
         id (first (map #(.substring ^String % 1) (re-seq #"#[^.*]*" node-str)))]
     [(if (empty? node-tag) "div" node-tag)
-     (str/join " " classes)
+     (when-not (empty? classes) (str/join " " classes))
      id]))
-
-(declare create-children)
 
 (defmulti set-attribute! #(second %))
 
@@ -39,6 +37,8 @@
     (let [e (.substring a 3)]
       (.addEventListener el e v))
     (.setAttribute el a v)))
+
+(declare create-child)
 
 (defn create-vector
   [[node-key & rest]]
@@ -56,8 +56,8 @@
       (doseq [[k v] (dissoc literal-attrs :class :is)]
         (when v
           (set-attribute! [el (name k) v])))
-      (when children
-        (create-children el children))
+      (doseq [c (filter identity children)]
+        (.appendChild el (create-child c)))
       el)))
 
 (defn mark-as-partially-compiled!
@@ -67,14 +67,32 @@
       (recur pel)
       (aset el "hipo-partially-compiled" true))))
 
-(defn create-children
-  [el data]
+(defn create-child
+  [o]
   (cond
-    (nil? data) nil
-    (literal? data) (.appendChild el (.createTextNode js/document data))
-    (vector? data) (.appendChild el (create-vector data))
-    (seq? data)
-    (doseq [o data]
-      (create-children el o))
+    (literal? o) (.createTextNode js/document o)
+    (vector? o) (create-vector o)
     :else
-    (throw (str "Don't know how to make node from: " (pr-str data)))))
+    (throw (str "Don't know how to make node from: " (pr-str o)))))
+
+(defn create-with-parent
+  [el o]
+  (when o
+    (mark-as-partially-compiled! el)
+    (if (seq? o)
+      (doseq [c (filter identity o)]
+        (.appendChild el (create-child c)))
+      (.appendChild el (create-child o)))))
+
+(defn create
+  [o]
+  (when o
+    (if (seq? o)
+      (let [f (.createDocumentFragment js/document)]
+        (mark-as-partially-compiled! f)
+        (doseq [c (filter identity o)]
+          (.appendChild f (create-child c)))
+        f)
+      (let [el (create-child o)]
+        (mark-as-partially-compiled! el)
+        el))))

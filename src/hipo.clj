@@ -3,5 +3,6 @@
 
 (defmacro create
   "Create a DOM element from hiccup style representation."
-  [data]
-  `(comp/compile-create ~data))
+  [o]
+  (when o
+    `(comp/compile-create ~o)))

@@ -79,7 +79,7 @@
 (deftest function
   (let [e (hipo/create (my-button "label"))]
     (is (hipo/partially-compiled? e))
-    (is (= "BUTTON" (.-tagName (.-firstChild e))))
+    (is (= "BUTTON" (.-tagName e)))
     (is (= "label" (.-textContent e))))
   (let [e (hipo/create [:div (my-button "label") (my-button "label")])]
     (is (hipo/partially-compiled? e))
@@ -102,7 +102,7 @@
     (is (nil? (.getAttribute e "on-click"))))
   (let [e (hipo/create (my-div))]
     (is (hipo/partially-compiled? e))
-    (is (nil? (.getAttribute (.-firstChild e) "on-click")))))
+    (is (nil? (.getAttribute e "on-click")))))
 
 (defn my-custom [] [:div {:test3 1 :test4 1}])
 

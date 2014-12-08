@@ -85,10 +85,8 @@
   `(do ~@(for [o body] `(compile-create-child ~el ~o))))
 
 (defmethod compile-form :default
-  [[el data]]
-  `(do
-     (hipo.interpreter/mark-as-partially-compiled! ~el)
-     (hipo.interpreter/create-children ~el ~data)))
+  [[el o]]
+  `(hipo.interpreter/create-with-parent ~el ~o))
 
 (defn text-compliant-hint?
   [data env]
@@ -109,7 +107,6 @@
 (defmacro compile-create-child
   [el data]
   (cond
-    (nil? data) nil
     (text-content? data &env) `(.appendChild ~el (.createTextNode js/document ~data))
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
     :else (compile-form [el data])))
@@ -151,23 +148,19 @@
                (when ~v
                  ~(if class
                     `(if (= :class ~k)
-                       (.setAttribute ~el "class" (str ~(str class " ") ~v))
+                       (set! (.-className ~el) (str ~(str class " ") ~v))
                        (hipo.interpreter/set-attribute! [~el (name ~k) ~v]))
                     `(hipo.interpreter/set-attribute! [~el (name ~k) ~v]))))))
-       ~@(when (seq children)
+       ~@(when (seq? children)
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
-            (for [c children]
+            (for [c (filter identity children)]
               `(compile-create-child ~el ~c))))
        ~el))))
 
 (defmacro compile-create
-  [data]
+  [o]
   (cond
-    (nil? data) nil
-    (text-content? data &env) `(.createTextNode js/document ~data)
-    (vector? data) `(compile-create-vector ~data)
-    :else `(let [f# (.createDocumentFragment js/document)]
-             (hipo.interpreter/mark-as-partially-compiled! f#)
-             (hipo.interpreter/create-children f# ~data)
-             f#)))
+    (text-content? o &env) `(.createTextNode js/document ~o)
+    (vector? o) `(compile-create-vector ~o)
+    :else `(hipo.interpreter/create ~o)))
