@@ -41,6 +41,15 @@ el.appendChild(document.createElement("span"));
 
 Note that the hiccup syntax is extended to handle all properties whose name starts with **on-** as event listener registration.
 
+Attributes defined via a function (as opposed to literal maps) must be annotated with `^:attrs`. This allows for simpler generated code as a function in second place can denote either attributes or a child node.
+
+```clojure
+(ns …
+  (:require [hipo :as hipo :include-macros true]))
+
+(hipo/create [:div ^:attrs (merge {:class "class"} {:id "id"}) (fn [] [:span])])
+```
+
 When the hiccup representation can't be fully compiled the remaining hiccup elements are interpreted at runtime. This might happen when functions or parameters are used.
 Once in interpreted mode any nested child will not be compiled even if it is a valid candidate for compilation.
 
