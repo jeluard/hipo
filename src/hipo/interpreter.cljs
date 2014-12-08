@@ -40,6 +40,13 @@
 
 (declare create-child)
 
+(defn append-children!
+  [el o]
+  (if (seq? o)
+    (doseq [c (filter identity o)]
+      (append-children! el c))
+    (.appendChild el (create-child o))))
+
 (defn create-vector
   [[node-key & rest]]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
@@ -57,10 +64,7 @@
         (when v
           (set-attribute! [el (name k) v])))
       (when children
-        (if (seq? children)
-          (doseq [c (filter identity children)]
-            (.appendChild el (create-child c)))
-          (.appendChild el (create-child children))))
+        (append-children! el children))
       el)))
 
 (defn mark-as-partially-compiled!
@@ -68,7 +72,7 @@
   (loop [el el]
     (if-let [pel (.-parentElement el)]
       (recur pel)
-      (aset el "hipo-partially-compiled" true))))
+      (do (aset el "hipo-partially-compiled" true) el))))
 
 (defn create-child
   [o]
@@ -76,26 +80,20 @@
     (literal? o) (.createTextNode js/document o)
     (vector? o) (create-vector o)
     :else
-    (throw (str "Don't know how to make node from: " (pr-str o)))))
+    (throw (str "Don't know how to make node from: " (seq? o) "" (pr-str o)))))
 
-(defn create-with-parent
+(defn append-to-parent
   [el o]
   (when o
     (mark-as-partially-compiled! el)
-    (if (seq? o)
-      (doseq [c (filter identity o)]
-        (.appendChild el (create-child c)))
-      (.appendChild el (create-child o)))))
+    (append-children! el o)))
 
 (defn create
   [o]
   (when o
-    (if (seq? o)
-      (let [f (.createDocumentFragment js/document)]
-        (mark-as-partially-compiled! f)
-        (doseq [c (filter identity o)]
-          (.appendChild f (create-child c)))
-        f)
-      (let [el (create-child o)]
-        (mark-as-partially-compiled! el)
-        el))))
+    (mark-as-partially-compiled!
+      (if (seq? o)
+        (let [f (.createDocumentFragment js/document)]
+          (append-children! f o)
+          f)
+        (create-child o)))))

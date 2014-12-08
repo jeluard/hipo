@@ -55,6 +55,8 @@
     (is (= "anchor" (.-textContent e)))
     (is (= "http://somelink" (.getAttribute e "href")))))
 
+(defn my-div-with-nested-list [] [:div [:div] (list [:div "a"] [:div "b"] [:div "c"])])
+
 (deftest nested
   ;; test html for example list form
   ;; note: if practice you can write the direct form (without the list) you should.
@@ -69,13 +71,16 @@
     (is (-> e .-childNodes (aget 0) .-innerHTML (= "span0")))
     (is (-> e .-childNodes (aget 1) .-innerHTML (= "span1")))
     (is (-> e .-childNodes (aget 2) .-innerHTML (= "end"))))
-
   ;; test equivalence of "direct inline" and list forms
   (let [spans (for [i (range 2)] [:span (str "span" i)])
         end   [:span.end "end"]
         e1 (hipo/create [:div.class1 (list spans end)])
         e2 (hipo/create [:div.class1 spans end])]
-    (is (= (.-innerHTML e1) (.-innerHTML e2)))))
+    (is (= (.-innerHTML e1) (.-innerHTML e2))))
+  (let [e (hipo/create (my-div-with-nested-list))]
+    (is (hipo/partially-compiled? e))
+    (is (= 4 (.. e -childNodes -length)))
+    (is (= "abc" (.-textContent e)))))
 
 (defn my-button [s] [:button s])
 

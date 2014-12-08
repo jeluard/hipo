@@ -61,32 +61,32 @@
   (if (and (seq? form) (symbol? (first form)))
     (name (first form))))
 
-(defmulti compile-form
+(defmulti compile-append-form
   #(form-name (second %)))
 
-(defmethod compile-form "for"
+(defmethod compile-append-form "for"
   [[el [_ bindings body]]]
-  `(doseq ~bindings (compile-create-child ~el ~body)))
+  `(doseq ~bindings (compile-append-child ~el ~body)))
 
-(defmethod compile-form "if"
+(defmethod compile-append-form "if"
   [[el [_ condition & body]]]
   (if (= 1 (count body))
-    `(if ~condition (compile-create-child ~el ~(first body)))
-    `(if ~condition (compile-create-child ~el ~(first body))
-                    (compile-create-child ~el ~(second body)))))
+    `(if ~condition (compile-append-child ~el ~(first body)))
+    `(if ~condition (compile-append-child ~el ~(first body))
+                    (compile-append-child ~el ~(second body)))))
 
-(defmethod compile-form "when"
+(defmethod compile-append-form "when"
   [[el [_ condition & body]]]
   (assert (= 1 (count body)) "Only a single form is supported with when")
-  `(if ~condition (compile-create-child ~el ~(last body))))
+  `(if ~condition (compile-append-child ~el ~(last body))))
 
-(defmethod compile-form "list"
+(defmethod compile-append-form "list"
   [[el [_ & body]]]
-  `(do ~@(for [o body] `(compile-create-child ~el ~o))))
+  `(do ~@(for [o body] `(compile-append-child ~el ~o))))
 
-(defmethod compile-form :default
+(defmethod compile-append-form :default
   [[el o]]
-  `(hipo.interpreter/create-with-parent ~el ~o))
+  `(hipo.interpreter/append-to-parent ~el ~o))
 
 (defn text-compliant-hint?
   [data env]
@@ -104,12 +104,12 @@
       (-> data meta :text)
       (text-compliant-hint? data env)))
 
-(defmacro compile-create-child
+(defmacro compile-append-child
   [el data]
   (cond
     (text-content? data &env) `(.appendChild ~el (.createTextNode js/document ~data))
     (vector? data) `(.appendChild ~el (compile-create-vector ~data))
-    :else (compile-form [el data])))
+    :else (compile-append-form [el data])))
 
 (defn compile-class
   [literal-attrs class-keyword]
@@ -155,7 +155,7 @@
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
             (for [c (filter identity children)]
-              `(compile-create-child ~el ~c))))
+              `(compile-append-child ~el ~c))))
        ~el))))
 
 (defmacro compile-create
