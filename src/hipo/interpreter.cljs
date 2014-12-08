@@ -56,8 +56,11 @@
       (doseq [[k v] (dissoc literal-attrs :class :is)]
         (when v
           (set-attribute! [el (name k) v])))
-      (doseq [c (filter identity children)]
-        (.appendChild el (create-child c)))
+      (when children
+        (if (seq? children)
+          (doseq [c (filter identity children)]
+            (.appendChild el (create-child c)))
+          (.appendChild el (create-child children))))
       el)))
 
 (defn mark-as-partially-compiled!
