@@ -12,6 +12,9 @@
     (is (= "some text" (.-textContent e)))
     (is (= js/document.TEXT_NODE (-> e .-childNodes (aget 0) .-nodeType)))
     (is (zero? (-> e .-children .-length))))
+  (let [e (hipo/create [:script {:src "http://somelink"}])]
+    (is (= "" (.-textContent e)))
+    (is (= "http://somelink" (.getAttribute e "src"))))
   (let [e (hipo/create [:a {:href "http://somelink"} "anchor"])]
     (is (-> e .-tagName (= "A")))
     (is (= "anchor" (.-textContent e)))

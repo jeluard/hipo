@@ -151,7 +151,7 @@
                        (set! (.-className ~el) (str ~(str class " ") ~v))
                        (hipo.interpreter/set-attribute! [~el (name ~k) ~v]))
                     `(hipo.interpreter/set-attribute! [~el (name ~k) ~v]))))))
-       ~@(when (seq? children)
+       ~@(when (seq children)
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
             (for [c (filter identity children)]
