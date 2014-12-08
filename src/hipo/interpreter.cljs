@@ -80,7 +80,7 @@
     (literal? o) (.createTextNode js/document o)
     (vector? o) (create-vector o)
     :else
-    (throw (str "Don't know how to make node from: " (seq? o) "" (pr-str o)))))
+    (throw (str "Don't know how to make node from: " (pr-str o)))))
 
 (defn append-to-parent
   [el o]
