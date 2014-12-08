@@ -86,7 +86,8 @@
 
 (defmethod compile-append-form :default
   [[el o]]
-  `(hipo.interpreter/append-to-parent ~el ~o))
+  (when o
+    `(hipo.interpreter/append-to-parent ~el ~o)))
 
 (defn text-compliant-hint?
   [data env]

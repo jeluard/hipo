@@ -84,16 +84,16 @@
 
 (defn append-to-parent
   [el o]
-  (when o
-    (mark-as-partially-compiled! el)
-    (append-children! el o)))
+  {:pre [(not (nil? o))]}
+  (mark-as-partially-compiled! el)
+  (append-children! el o))
 
 (defn create
   [o]
-  (when o
-    (mark-as-partially-compiled!
-      (if (seq? o)
-        (let [f (.createDocumentFragment js/document)]
-          (append-children! f o)
-          f)
-        (create-child o)))))
+  {:pre [(not (nil? o))]}
+  (mark-as-partially-compiled!
+    (if (seq? o)
+      (let [f (.createDocumentFragment js/document)]
+        (append-children! f o)
+        f)
+      (create-child o))))
