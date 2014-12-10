@@ -1,9 +1,15 @@
 (ns hipo.hipo-test
   (:require [cemerick.cljs.test :as test]
             [hipo :as hipo :include-macros]
-            [hipo.interpreter :refer [set-attribute!]])
+            [hipo.interpreter :as hi])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.hipo-test]))
+
+(deftest parse-keyword
+  (is (= ["div"] (hi/parse-keyword "div")))
+  (is (= ["div" "id"] (hi/parse-keyword "div#id")))
+  (is (= ["div" nil "class1 class2"] (hi/parse-keyword "div.class1.class2")))
+  (is (= ["div" "id" "class1 class2"] (hi/parse-keyword "div#id.class1.class2"))))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))
@@ -66,8 +72,7 @@
     (is (-> e .-textContent (= "span0span1end")))
     (is (-> e .-className (= "class1")))
     (is (-> e .-childNodes .-length (= 3)))
-    (is (-> e .-innerHTML
-            (= "<span>span0</span><span>span1</span><span class=\"end\">end</span>")))
+    (is (= "<span>span0</span><span>span1</span><span class=\"end\">end</span>" (.-innerHTML e)))
     (is (-> e .-childNodes (aget 0) .-innerHTML (= "span0")))
     (is (-> e .-childNodes (aget 1) .-innerHTML (= "span1")))
     (is (-> e .-childNodes (aget 2) .-innerHTML (= "end"))))
@@ -114,7 +119,7 @@
 
 (defn my-custom [] [:div {:test3 1 :test4 1}])
 
-(defmethod set-attribute! "test4"
+(defmethod hi/set-attribute! "test4"
   [[el a v]]
   (.setAttribute el a (* 2 v)))
 
