@@ -18,16 +18,21 @@
       (.createElement js/document tag))))
 
 (defn parse-keyword
-  "return pair [tag class-str id] where tag is dom tag and attrs
-   are key-value attribute pairs from css-style dom selector"
-  [node-key]
-  (let [node-str (name node-key)
-        node-tag (second (re-find #"^([^.\#]+)[.\#]?" node-str))
-        classes (map #(.substring ^String % 1) (re-seq #"\.[^.*]*" node-str))
-        id (first (map #(.substring ^String % 1) (re-seq #"#[^.*]*" node-str)))]
-    [(if (empty? node-tag) "div" node-tag)
-     (when-not (empty? classes) (str/join " " classes))
-     id]))
+  [s]
+  (let [i (.indexOf s ".")]
+    (if (pos? i)
+      (let [n (.substr s 0 i)
+            c (.replace (.substr s (inc i)) "." " ")]
+        (let [i (.indexOf n "#")]
+          (if (pos? i)
+            (let [v (.split n "#")]
+              [n (aget v 0) (aget v 1)])
+            [n c])))
+      (let [i (.indexOf s "#")]
+        (if (pos? i)
+          (let [v (.split s "#")]
+            [(aget v 0) (aget v 1)])
+          [s])))))
 
 (defmulti set-attribute! #(second %))
 
@@ -51,7 +56,7 @@
   [[node-key & rest]]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
         children (if literal-attrs (drop 1 rest) rest)
-        [tag class-str id] (parse-keyword node-key)
+        [tag class-str id] (parse-keyword (name node-key))
         class-str (if-let [c (:class literal-attrs)] (str class-str " " c) class-str)
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
