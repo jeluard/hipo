@@ -7,16 +7,16 @@
   :source-paths  ["src" "test"]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-2411"]]
+   {:dependencies [[org.clojure/clojurescript "0.0-2511"]]
     :plugins [[lein-cljsbuild "1.0.3"]
-              [com.cemerick/clojurescript.test "0.3.1"]]}}
+              [com.cemerick/clojurescript.test "0.3.3"]]}}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]
            :compiler {:output-to "target/unit-test.js"
                       :optimizations :whitespace
                       :pretty-print true}}}
-   :test-commands {"unit" ["phantomjs" :runner "dev-resources/document-register-element.js" "target/unit-test.js"]}}
+   :test-commands {"unit" ["slimerjs" :runner "dev-resources/document-register-element.js" "target/unit-test.js"]}}
   :aliases {"clean-test" ["do" "clean," "cljsbuild" "clean," "cljsbuild" "test"]
             "clean-install" ["do" "clean," "cljsbuild" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
