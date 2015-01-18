@@ -1,15 +1,9 @@
-(ns hipo.hipo-test
+(ns hipo-test
   (:require [cemerick.cljs.test :as test]
             [hipo :as hipo :include-macros]
             [hipo.interpreter :as hi])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.hipo-test]))
-
-(deftest parse-keyword
-  (is (= ["div"] (hi/parse-keyword "div")))
-  (is (= ["div" "id"] (hi/parse-keyword "div#id")))
-  (is (= ["div" nil "class1 class2"] (hi/parse-keyword "div.class1.class2")))
-  (is (= ["div" "id" "class1 class2"] (hi/parse-keyword "div#id.class1.class2"))))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))
@@ -120,7 +114,7 @@
 (defn my-custom [] [:div {:test3 1 :test4 1}])
 
 (defmethod hi/set-attribute! "test4"
-  [[el a v]]
+  [el a _ v]
   (.setAttribute el a (* 2 v)))
 
 (deftest custom-attribute
@@ -201,3 +195,113 @@
     (is (true? (hipo/partially-compiled? e))))
   (let [e (hipo/create [:div ^:text (my-str "content")])]
     (is (false? (hipo/partially-compiled? e)))))
+
+(deftest update-simple
+  (let [h1 [:div "a"]
+        h2 [:div "b"]
+        e (hipo/create h1)]
+    (hi/update! e h2)
+
+    (is (= "b" (.-textContent e)))))
+
+#_
+(deftest update-state-simple
+  (let [f (fn [m] [:div (:content m)])
+        m1 {:content "a"}
+        m2 {:content "b"}
+        e (hipo/create-from-template f m1)]
+    (hipo/set-state! e m2)
+
+    (is (= "b" (.-textContent e)))))
+
+(deftest update-nested
+  (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
+        h2 [:div {:attr1 nil :attr2 nil} [:span]]
+        h3 [:div]
+        h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
+        e (hipo/create h1)
+        o (js/MutationObserver. identity)]
+    (.observe o e #js {:attributes true :childList true :characterData: true :subtree true})
+
+    (is "div" (.-localName e))
+    (is (= 2 (.-childElementCount e)))
+
+    (hi/update! e h1)
+
+    (is (= 0 (count (array-seq (.takeRecords o)))))
+
+    (hi/update! e h2)
+
+    (is (not (.hasAttribute e "class")))
+    (is (not (.hasAttribute e "attr1")))
+    (is (not (.hasAttribute e "attr2")))
+    (is (= 1 (.-childElementCount e)))
+
+    (let [v (array-seq (.takeRecords o))]
+      (is (= 4 (count v)))
+      (is (= "childList" (.-type (first v))))
+      (is (= "childList" (.-type (second v))))
+      (is (= "attributes" (.-type (nth v 2))))
+      (is (= "attr1" (.-attributeName (nth v 2))))
+      (is (= "attributes" (.-type (nth v 3))))
+      (is (= "class" (.-attributeName (nth v 3)))))
+
+    (hi/update! e h3)
+
+    (is (= 0 (.-childElementCount e)))
+
+    (let [v (array-seq (.takeRecords o))]
+      (is (= 1 (count v)))
+      (is (= "childList" (.-type (first v)))))
+
+    (hi/update! e h4)
+
+    (is "div" (.-localName e))
+    (is (= "class2" (.getAttribute e "class")))
+    (is (not (.hasAttribute e "attr1")))
+    (is (= "2" (.getAttribute e "attr2")))
+    (is (= 2 (.-childElementCount e)))
+    (let [c (.-firstChild e)]
+      (is (= "span" (.-localName c))))
+    (let [c (.. e -firstChild -nextElementSibling)]
+      (is (= "div" (.-localName c)))
+      (is (= "content2" (.-textContent c))))
+
+    (let [v (array-seq (.takeRecords o))]
+      (is (= 3 (count v)))
+      (is (= "childList" (.-type (first v))))
+      (is (= "attributes" (.-type (second v))))
+      (is (= "class" (.-attributeName (second v))))
+      (is (= "attributes" (.-type (nth v 2))))
+      (is (= "attr2" (.-attributeName (nth v 2)))))
+
+    (.disconnect o)))
+
+(defn fire-click-event
+  [el]
+  (let [ev (js/Event. "click")]
+    (.dispatchEvent el ev)))
+
+(deftest update-listener
+  (let [a (atom 0)
+        h1 [:div {:on-click #(swap! a inc)}]
+        h2 [:div]
+        el (hipo/create h1)]
+
+    (fire-click-event el)
+
+    (hi/update! el h2)
+
+    (fire-click-event el)
+
+    (is (= 1 @a))))
+
+(deftest update-keyed
+  (let [h1 [:ul (for [i (range 10)]
+                  ^{:key (str i)} [:li i])]
+        h2 [:ul (for [i (reverse (range 10))]
+                  ^{:key (str i)} [:li i])]
+        el (hipo/create h1)]
+    (hi/update! el h2)
+
+    (is (= "9" (.. el -firstChild -textContent)))))
