@@ -1,6 +1,6 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
-            [cljs.analyzer :as ana]))
+            [cljs.analyzer.api :as ana]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
@@ -87,14 +87,16 @@
 (defmethod compile-append-form :default
   [[el o]]
   (when o
-    `(hipo.interpreter/append-to-parent ~el ~o)))
+    `(let [o# ~o]
+       (if o#
+         (hipo.interpreter/append-to-parent ~el o#)))))
 
 (defn text-compliant-hint?
   [data env]
   (when (seq? data)
     (when-let [f (first data)]
       (when (symbol? f)
-        (let [t (:tag (ana/resolve-var env f))]
+        (let [t (:tag (ana/resolve env f))]
           (or (= t 'boolean)
               (= t 'string)
               (= t 'number)))))))
@@ -150,8 +152,8 @@
                  ~(if class
                     `(if (= :class ~k)
                        (set! (.-className ~el) (str ~(str class " ") ~v))
-                       (hipo.interpreter/set-attribute! [~el (name ~k) ~v]))
-                    `(hipo.interpreter/set-attribute! [~el (name ~k) ~v]))))))
+                       (hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))
+                    `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))))))
        ~@(when (seq children)
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
