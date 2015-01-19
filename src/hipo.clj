@@ -6,5 +6,11 @@
   [h]
   (when h
     `(let [el# (hc/compile-create ~h)]
-       (hipo.interpreter/set-template! el# ~h)
+       (hipo/set-template! el# ~h)
        el#)))
+
+(defmacro update!
+  [el h]
+  `(let [ph# (hipo/get-template ~el)]
+     (hipo.interpreter/update! ~el ph# ~h)
+     (hipo/set-template! ~el ~h)))

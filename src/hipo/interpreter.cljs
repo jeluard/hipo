@@ -159,16 +159,9 @@
       (when-not (= om nm)
         (update-attributes! el om nm)))))
 
-(defn get-template [el] (aget el "hipo_template"))
-(defn set-template! [el h] (aset el "hipo_template" h))
-
 (defn update!
-  ([el h]
-    (let [ph (get-template el)]
-      (update! el ph h)
-      (set-template! el h)))
-  ([el ph h]
-    (when-not (= ph h)
-      (cond
-        (hic/literal? h) (dom/replace-text! el h)
-        (vector? h) (update-vector! el ph h)))))
+  [el ph h]
+  (when-not (= ph h)
+    (cond
+      (hic/literal? h) (dom/replace-text! el h)
+      (vector? h) (update-vector! el ph h))))

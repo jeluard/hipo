@@ -200,7 +200,7 @@
   (let [h1 [:div "a"]
         h2 [:div "b"]
         e (hipo/create h1)]
-    (hi/update! e h2)
+    (hipo/update! e h2)
 
     (is (= "b" (.-textContent e)))))
 
@@ -226,11 +226,11 @@
     (is "div" (.-localName e))
     (is (= 2 (.-childElementCount e)))
 
-    (hi/update! e h1)
+    (hipo/update! e h1)
 
     (is (= 0 (count (array-seq (.takeRecords o)))))
 
-    (hi/update! e h2)
+    (hipo/update! e h2)
 
     (is (not (.hasAttribute e "class")))
     (is (not (.hasAttribute e "attr1")))
@@ -246,7 +246,7 @@
       (is (= "attributes" (.-type (nth v 3))))
       (is (= "class" (.-attributeName (nth v 3)))))
 
-    (hi/update! e h3)
+    (hipo/update! e h3)
 
     (is (= 0 (.-childElementCount e)))
 
@@ -254,7 +254,7 @@
       (is (= 1 (count v)))
       (is (= "childList" (.-type (first v)))))
 
-    (hi/update! e h4)
+    (hipo/update! e h4)
 
     (is "div" (.-localName e))
     (is (= "class2" (.getAttribute e "class")))
@@ -290,7 +290,7 @@
 
     (fire-click-event el)
 
-    (hi/update! el h2)
+    (hipo/update! el h2)
 
     (fire-click-event el)
 
@@ -302,6 +302,6 @@
         h2 [:ul (for [i (reverse (range 10))]
                   ^{:key (str i)} [:li i])]
         el (hipo/create h1)]
-    (hi/update! el h2)
+    (hipo/update! el h2)
 
     (is (= "9" (.. el -firstChild -textContent)))))
