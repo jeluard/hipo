@@ -9,10 +9,6 @@
       (.createElement js/document tag is)
       (.createElement js/document tag))))
 
-(defn custom-element?
-  [el]
-  (not= -1 (.indexOf (.-tagName el) "-")))
-
 (defn cached-child-nodes
   [el]
   (if-let [chs (aget el "hipo_chs")]
