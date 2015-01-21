@@ -9,17 +9,9 @@
       (.createElement js/document tag is)
       (.createElement js/document tag))))
 
-(defn cached-child-nodes
-  [el]
-  (if-let [chs (aget el "hipo_chs")]
-    chs
-    (let [chs (.-childNodes el)]
-      (aset el "hipo_chs" chs)
-      chs)))
-
 (defn child-node
   [el i]
-  (.item (cached-child-nodes el) i))
+  (.item (.-childNodes el) i))
 
 (defn replace!
   [el nel]
