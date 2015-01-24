@@ -134,8 +134,7 @@
 
 (defn keyed-children?
   [v]
-  ; TODO make sure we always receive either seq or vector?
-  (contains? (meta (first v) #_(v 0)) :key))
+  (contains? (meta (v 0)) :key))
 
 (defn update-children!
   [el och nch]
@@ -148,6 +147,7 @@
 
 (defn update-vector!
   [el oh nh]
+  {:pre [(vector? oh) (vector? nh)]}
   (if-not (= (hic/parse-tag-name (name (nh 0))) (hic/parse-tag-name (name (oh 0))))
     (dom/replace! el (create oh))
     (let [om (hic/attributes oh)

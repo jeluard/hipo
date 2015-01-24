@@ -46,12 +46,13 @@
 
 (defn flatten-children
   [v]
-  {:pre [(vector? v)]}
+  {:pre [(vector? v)]
+   :post [(vector? v)]}
   (if (every? #(or (literal? %) (vector? %)) v)
     v
     (loop [acc [] [elt & others] v]
       (if (nil? elt)
-        (apply list acc)
+        acc
         (recur
           (if (seq? elt)
             (apply conj acc elt)
