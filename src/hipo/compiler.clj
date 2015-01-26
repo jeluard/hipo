@@ -9,10 +9,10 @@
   [o]
   (or (string? o) (number? o) (true? o) (false? o)))
 
-(defmulti compile-set-attribute! #(second %))
+(defmulti compile-set-attribute! (fn [_ a _] a))
 
 (defmethod compile-set-attribute! :default
-  [[el a v]]
+  [el a v]
   (cond
     (= a "id")
     `(set! (.-id ~el) ~v)
@@ -28,11 +28,11 @@
   (let [a (name k)]
     (if (literal? v)
       (if v
-        (compile-set-attribute! [el a v]))
+        (compile-set-attribute! el a v))
       (let [ve (gensym "v")]
         `(let [~ve ~v]
            (if ~ve
-             ~(compile-set-attribute! [el a ve])))))))
+             ~(compile-set-attribute! el a ve)))))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
