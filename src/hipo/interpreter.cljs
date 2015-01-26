@@ -14,6 +14,8 @@
 
 (defmulti set-attribute! (fn [_ a _ _] a))
 
+(defmethod set-attribute! "checked" [el a _ v] (set! (.-checked el) v))
+
 (defmethod set-attribute! :default
   [el a ov nv]
   (if (listener-name? a)
@@ -21,6 +23,8 @@
     (.setAttribute el a nv)))
 
 (defmulti remove-attribute! (fn [_ a _] a))
+
+(defmethod remove-attribute! "checked" [el a _] (set! (.-checked el) false))
 
 (defmethod remove-attribute! :default
   [el a ov]
