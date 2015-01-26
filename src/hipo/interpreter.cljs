@@ -6,9 +6,6 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(def ^:private id-separator "#")
-(def ^:private class-separator ".")
-
 (defn- listener-name? [s] (= 0 (.indexOf s "on-")))
 (defn- listener-name->event-name [s] (.substring s 3))
 
