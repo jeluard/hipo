@@ -7,7 +7,7 @@
   ;:source-paths  ["src" "test"]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-2665"]]
+   {:dependencies [[org.clojure/clojurescript "0.0-2727"]]
     :plugins [[lein-cljsbuild "1.0.4"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
   :cljsbuild
