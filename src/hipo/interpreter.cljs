@@ -46,7 +46,7 @@
         tag (hic/parse-tag-name node)
         id (hic/parse-id node)
         class-str (hic/parse-classes node)
-        class-str (if-let [c (:class literal-attrs)] (if class-str (str class-str " " c) c) class-str)
+        class-str (if-let [c (:class literal-attrs)] (if class-str (str class-str " " c) (str c)) class-str)
         element-ns (when (+svg-tags+ tag) +svg-ns+)
         is (:is literal-attrs)]
     (let [el (dom/create-element element-ns tag is)]
@@ -106,21 +106,40 @@
 
 (declare update!)
 
+(defn- child-key [h] (:key (meta h)))
+(defn keyed-children->map [v] (into {} (for [h v] [(child-key h) h])))
+(defn keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (ih 1)) ih])))
+
 (defn update-keyed-children!
   [el och nch]
-  )
+  (let [om (keyed-children->map och)
+        nm (keyed-children->indexed-map nch)]
+    (let [cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
+      (doseq [[i [ii h]] nm]
+        (if-let [oh (om i)]
+          ; existing node; detach, update and re-attach
+          (let [ncel (.removeChild el (cs i))]
+            (update! ncel oh h)
+            (dom/insert-child-at! el ii ncel)) ; TODO improve perf by relying on (cs ii)? index should be updated based on new insertions
+          ; new node
+          (dom/insert-child-at! el ii (create-child h))))
+      (dom/remove-trailing-children! el (count (set/difference (set (keys om)) (set (keys nm))))))))
 
 (defn update-non-keyed-children!
   [el och nch]
   (let [oc (count och)
         nc (count nch)
         d (- oc nc)]
+    ; Remove now unused elements if (count och) > (count nch)
+    (when (pos? d)
+      (dom/remove-trailing-children! el d))
     ; Assume children are always in the same order i.e. an element is identified by its position
-    ; Update all existing node up to (min (count och) (count nch))
-    (dotimes [i (min oc nc)]
-      (let [ov (nth och i)
-            nv (nth nch i)]
-        (update! (dom/child-node el i) ov nv)))
+    ; Update all existing node
+    (when-let [cs (dom/children el)]
+      (dotimes [i (count cs)]
+        (let [ov (nth och i)
+              nv (nth nch i)]
+          (update! (cs i) ov nv))))
     ; Create new elements if (count nch) > (count oh)
     (when (neg? d)
       (if (= -1 d)
@@ -128,20 +147,16 @@
         (let [f (.createDocumentFragment js/document)]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
           (append-children! f (apply list (if (= 0 oc) nch (subvec nch oc))))
-          (.appendChild el f))))
-    ; Remove now unused elements if (count och) > (count nch)
-    (when (pos? d)
-      (dom/remove-trailing-children! el d))))
+          (.appendChild el f))))))
 
-(defn keyed-children?
-  [v]
-  (contains? (meta (v 0)) :key))
+(defn keyed-children? [v]
+
+  (not (nil? (child-key (v 0)))))
 
 (defn update-children!
   [el och nch]
   (if (empty? nch)
-    (when (seq och) ; No children but used to have some
-      (dom/clear! el))
+    (dom/clear! el)
     (if (keyed-children? nch)
       (update-keyed-children! el och nch)
       (update-non-keyed-children! el och nch))))

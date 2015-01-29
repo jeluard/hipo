@@ -11,11 +11,28 @@
 
 (defn- element? [el] (when el (= 1 (.-nodeType el))))
 
-(defn child-node
+(defn child-at
   [el i]
-  {:pre [(element? el)
-         (< i (.. el -childNodes -length))]}
-  (.item (.-childNodes el) i))
+  {:pre [(element? el)]}
+  (loop [c 0
+         cel (.-firstChild el)]
+    (if (or (nil? cel) (= i c))
+      cel
+      (recur (inc c) (.-nextSibling cel)))))
+
+(defn children
+  ([el] (children el 0))
+  ([el i]
+   {:pre [(element? el)
+          (not (neg? i))]}
+   (let [fel (.-firstChild el)]
+     (when fel
+       (loop [cel fel
+              acc [cel]]
+         (let [nel (.-nextSibling cel)]
+           (if (and (not (zero? (- (count acc) (inc i)))) nel)
+             (recur nel (conj acc nel))
+             acc)))))))
 
 (defn replace!
   [el nel]
@@ -32,11 +49,17 @@
 
 (defn clear!
   [el]
-  [:pre [(element? el)]]
+  {:pre [(element? el)]}
   (set! (.-innerHTML el) ""))
 
 (defn remove-trailing-children!
   [el n]
-  [:pre [(element? el)]]
+  {:pre [(element? el)]}
   (dotimes [_ n]
-    (.removeChild el (.-lastChild el))))
+    (if (exists? (.-remove el))
+      (.remove (.-lastChild el))
+      (.removeChild el (.-lastChild el)))))
+
+(defn insert-child-at!
+  [el i nel]
+  (.insertBefore el nel (child-at el i)))

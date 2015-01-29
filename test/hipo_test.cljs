@@ -297,11 +297,33 @@
     (is (= 1 @a))))
 
 (deftest update-keyed
-  (let [h1 [:ul (for [i (range 10)]
-                  ^{:key (str i)} [:li i])]
-        h2 [:ul (for [i (reverse (range 10))]
-                  ^{:key (str i)} [:li i])]
+  (let [h1 [:ul (for [i (range 6)]
+                  ^{:key i} [:li i])]
+        h2 [:ul (for [i (reverse (range 6))]
+                  ^{:key i} [:li {:class i} i])]
         el (hipo/create h1)]
     (hipo/update! el h2)
 
-    (is (= "9" (.. el -firstChild -textContent)))))
+    (is (= 6 (.. el -childNodes -length)))
+    (is (= "5" (.. el -firstChild -textContent)))
+    (is (= "5" (.. el -firstChild -className)))
+    (is (= "4" (.. el -firstChild -nextSibling -textContent)))
+    (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
+    (is (= "2" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))
+    (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -nextSibling -textContent)))
+    (is (= "0" (.. el -lastChild -textContent)))))
+
+(deftest update-keyed-sparse
+  (let [h1 [:ul (for [i (range 6)]
+                  ^{:key i} [:li i])]
+        h2 [:ul (for [i (cons 7 (filter odd? (reverse (range 6))))]
+                  ^{:key i} [:li {:class i} i])]
+        el (hipo/create h1)]
+    (hipo/update! el h2)
+
+    (is (= 4 (.. el -childNodes -length)))
+    (is (= "7" (.. el -firstChild -textContent)))
+    (is (= "7" (.. el -firstChild -className)))
+    (is (= "5" (.. el -firstChild -nextSibling -textContent)))
+    (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
+    (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
