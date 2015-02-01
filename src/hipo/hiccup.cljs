@@ -1,4 +1,5 @@
-(ns hipo.hiccup)
+(ns hipo.hiccup
+  (:require [hipo.fast :as f]))
 
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
@@ -25,7 +26,7 @@
 (defn parse-classes
   [s]
   (let [i (.indexOf s class-separator)]
-    (when (pos? i)
+    (if (pos? i)
       (.replace (.substr s (inc i)) class-separator " "))))
 
 (defn literal?
@@ -34,8 +35,8 @@
 
 (defn attributes
   [v]
-  (when-let [m (nth v 1 nil)]
-    (when (map? m)
+  (if-let [m (nth v 1 nil)]
+    (if (map? m)
       m)))
 
 (defn children
@@ -44,11 +45,23 @@
     (subvec v 2)
     (subvec v 1)))
 
+(defn flattened?
+  [v]
+  (if (f/emptyv? v)
+    true
+    (let [c (dec (count v))]
+      (loop [i 0]
+        (let [o (nth v i)]
+          (if (or (literal? o) (vector? o))
+            (if (identical? c i)
+              true
+              (recur (inc i)))))))))
+
 (defn flatten-children
   [v]
   {:pre [(vector? v)]
    :post [(vector? v)]}
-  (if (every? #(or (literal? %) (vector? %)) v)
+  (if (flattened? v)
     v
     (loop [acc [] [elt & others] v]
       (if (nil? elt)

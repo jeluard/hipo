@@ -9,11 +9,12 @@
       (.createElement js/document tag is)
       (.createElement js/document tag))))
 
-(defn- element? [el] (when el (= 1 (.-nodeType el))))
+(defn- element? [el] (if el (= 1 (.-nodeType el))))
+(defn- text-element? [el] (if el (= 3 (.-nodeType el))))
 
 (defn child-at
   [el i]
-  {:pre [(element? el)]}
+  {:pre [(element? el) (not (neg? i))]}
   (loop [c 0
          cel (.-firstChild el)]
     (if (or (nil? cel) (= i c))
@@ -26,7 +27,7 @@
    {:pre [(element? el)
           (not (neg? i))]}
    (let [fel (.-firstChild el)]
-     (when fel
+     (if fel
        (loop [cel fel
               acc [cel]]
          (let [nel (.-nextSibling cel)]
@@ -42,8 +43,8 @@
 
 (defn replace-text!
   [el s]
-  [:pre [(element? el)]]
-  (if (= 3 (.-nodeType el))
+  [:pre [(element? el) (string? s)]]
+  (if (text-element? el)
     (set! (.-textContent el) s)
     (replace! el (.createTextNode js/document s))))
 
@@ -54,7 +55,7 @@
 
 (defn remove-trailing-children!
   [el n]
-  {:pre [(element? el)]}
+  {:pre [(element? el) (not (neg? n))]}
   (dotimes [_ n]
     (if (exists? (.-remove el))
       (.remove (.-lastChild el))
@@ -62,4 +63,5 @@
 
 (defn insert-child-at!
   [el i nel]
+  {:pre [(element? el) (not (neg? i)) (element? nel)]}
   (.insertBefore el nel (child-at el i)))

@@ -1,7 +1,7 @@
 (ns hipo-test
   (:require [cemerick.cljs.test :as test]
             [hipo :as hipo :include-macros]
-            [hipo.interpreter :as hi])
+            [hipo.interpreter :as hi :refer [Interceptor]])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.hipo-test]))
 
@@ -204,16 +204,6 @@
 
     (is (= "b" (.-textContent e)))))
 
-#_
-(deftest update-state-simple
-  (let [f (fn [m] [:div (:content m)])
-        m1 {:content "a"}
-        m2 {:content "b"}
-        e (hipo/create-from-template f m1)]
-    (hipo/set-state! e m2)
-
-    (is (= "b" (.-textContent e)))))
-
 (deftest update-nested
   (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
         h2 [:div {:attr1 nil :attr2 nil} [:span]]
@@ -327,3 +317,16 @@
     (is (= "5" (.. el -firstChild -nextSibling -textContent)))
     (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
+
+(deftype PrintInterceptor []
+  Interceptor
+  (-intercept [_ t m]
+    (println t m)
+   ; (.time js/console "a")
+    (fn [] (println t "done")#_(.timeEnd js/console "a"))))
+
+(deftest interceptor
+  (let [i (PrintInterceptor.)
+        el (hipo/create [:div {:class "1"} [:div]])]
+    (hipo/update! el [:div {:class "2"} [:span] [:span]] {:interceptor i})
+    ))
