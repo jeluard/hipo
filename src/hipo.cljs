@@ -1,5 +1,6 @@
 (ns hipo
-  (:require [hipo.interpreter :as hi]))
+  (:require [hipo.interpreter])
+  (:require-macros hipo))
 
 (defn get-template [el] (aget el "hipo_template"))
 (defn set-template! [el h] (aset el "hipo_template" h))

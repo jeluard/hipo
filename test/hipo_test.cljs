@@ -1,6 +1,6 @@
 (ns hipo-test
   (:require [cemerick.cljs.test :as test]
-            [hipo :as hipo :include-macros]
+            [hipo :as hipo]
             [hipo.interpreter :as hi :refer [Interceptor]])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.hipo-test]))
