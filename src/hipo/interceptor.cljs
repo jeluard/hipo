@@ -1,5 +1,7 @@
-(ns hipo.interceptor
-  (:require [hipo.interpreter :refer [Interceptor]]))
+(ns hipo.interceptor)
+
+(defprotocol Interceptor
+  (-intercept [this t m]))
 
 (deftype TimeInterceptor [s]
   Interceptor

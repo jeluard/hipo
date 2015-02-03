@@ -8,9 +8,6 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defprotocol Interceptor
-  (-intercept [this t m]))
-
 (defn- listener-name? [s] (= 0 (.indexOf s "on-")))
 (defn- listener-name->event-name [s] (.substring s 3))
 
@@ -125,11 +122,13 @@
         cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
     (doseq [[i [ii h]] nm]
       (if-let [oh (get om i)]
-        ; existing node; detach, update and re-attach
-        (intercept int :update-at {:target el :value h :index i}
-          (let [ncel (.removeChild el (nth cs i))]
-            (update! ncel oh h)
-            (dom/insert-child-at! el ii ncel))) ; TODO improve perf by relying on (cs ii)? index should be updated based on new insertions
+        ; existing node; if data is identical? move to new location; otherwise detach, update and insert at the right location
+        (intercept int :move-at {:target el :value h :index ii}
+          (if (identical? oh h)
+            (dom/insert-child-at! el ii (nth cs i))
+            (let [ncel (.removeChild el (nth cs i))]
+              (update! ncel oh h int)
+              (dom/insert-child-at! el ii ncel)))); TODO improve perf by relying on (cs ii)? index should be updated based on new insertions
         ; new node
         (let [nel (create-child h)]
           (intercept int :insert-at {:target el :value nel :index ii}
@@ -153,7 +152,8 @@
       (dotimes [i (count cs)]
         (let [ov (nth och i)
               nv (nth nch i)]
-          (update! (nth cs i) ov nv int))))
+          (if-not (identical? ov nv)
+            (update! (nth cs i) ov nv int)))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (= -1 d)
@@ -189,18 +189,17 @@
           nm (hic/attributes nh)
           och (hic/children oh)
           nch (hic/children nh)]
-      (intercept int :update-children {:target el}
-        (if-not (identical? och nch)
+      (if-not (identical? och nch)
+        (intercept int :update-children {:target el}
           (update-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
       (if-not (identical? om nm)
         (update-attributes! el om nm int)))))
 
 (defn update!
-  ([el ph h] (update! el ph h nil))
-  ([el ph h int]
-    {:pre [(or (vector? h) (hic/literal? h))]}
+  [el ph h int]
+  {:pre [(or (vector? h) (hic/literal? h))]}
+  (if (hic/literal? h) ; literal check is much more efficient than vector check
     (if-not (identical? ph h)
-      (if (hic/literal? h) ; literal check is much more efficient than vector check
-        (intercept int :replace {:target el :value h}
-                   (dom/replace-text! el h))
-        (update-vector! el ph h int)))))
+      (intercept int :replace {:target el :value h}
+        (dom/replace-text! el h)))
+    (update-vector! el ph h int)))

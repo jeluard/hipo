@@ -1,7 +1,9 @@
 (ns hipo-test
   (:require [cemerick.cljs.test :as test]
-            [hipo :as hipo]
-            [hipo.interpreter :as hi :refer [Interceptor]])
+            [hipo :as hipo
+             ]
+            [hipo.interceptor :refer [Interceptor]]
+            [hipo.interpreter :as hi])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.hipo-test]))
 
@@ -199,33 +201,33 @@
 (deftest update-simple
   (let [h1 [:div "a"]
         h2 [:div "b"]
-        e (hipo/create h1)]
-    (hipo/update! e h2)
+        [el f] (hipo/create-for-update h1)]
+    (f h2)
 
-    (is (= "b" (.-textContent e)))))
+    (is (= "b" (.-textContent el)))))
 
 (deftest update-nested
   (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
         h2 [:div {:attr1 nil :attr2 nil} [:span]]
         h3 [:div]
         h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
-        e (hipo/create h1)
+        [el f] (hipo/create-for-update h1)
         o (js/MutationObserver. identity)]
-    (.observe o e #js {:attributes true :childList true :characterData: true :subtree true})
+    (.observe o el #js {:attributes true :childList true :characterData: true :subtree true})
 
-    (is "div" (.-localName e))
-    (is (= 2 (.-childElementCount e)))
+    (is "div" (.-localName el))
+    (is (= 2 (.-childElementCount el)))
 
-    (hipo/update! e h1)
+    (f h1)
 
     (is (= 0 (count (array-seq (.takeRecords o)))))
 
-    (hipo/update! e h2)
+    (f h2)
 
-    (is (not (.hasAttribute e "class")))
-    (is (not (.hasAttribute e "attr1")))
-    (is (not (.hasAttribute e "attr2")))
-    (is (= 1 (.-childElementCount e)))
+    (is (not (.hasAttribute el "class")))
+    (is (not (.hasAttribute el "attr1")))
+    (is (not (.hasAttribute el "attr2")))
+    (is (= 1 (.-childElementCount el)))
 
     (let [v (array-seq (.takeRecords o))]
       (is (= 4 (count v)))
@@ -236,24 +238,24 @@
       (is (= "attributes" (.-type (nth v 3))))
       (is (= "class" (.-attributeName (nth v 3)))))
 
-    (hipo/update! e h3)
+    (f h3)
 
-    (is (= 0 (.-childElementCount e)))
+    (is (= 0 (.-childElementCount el)))
 
     (let [v (array-seq (.takeRecords o))]
       (is (= 1 (count v)))
       (is (= "childList" (.-type (first v)))))
 
-    (hipo/update! e h4)
+    (f h4)
 
-    (is "div" (.-localName e))
-    (is (= "class2" (.getAttribute e "class")))
-    (is (not (.hasAttribute e "attr1")))
-    (is (= "2" (.getAttribute e "attr2")))
-    (is (= 2 (.-childElementCount e)))
-    (let [c (.-firstChild e)]
+    (is "div" (.-localName el))
+    (is (= "class2" (.getAttribute el "class")))
+    (is (not (.hasAttribute el "attr1")))
+    (is (= "2" (.getAttribute el "attr2")))
+    (is (= 2 (.-childElementCount el)))
+    (let [c (.-firstChild el)]
       (is (= "span" (.-localName c))))
-    (let [c (.. e -firstChild -nextElementSibling)]
+    (let [c (.. el -firstChild -nextElementSibling)]
       (is (= "div" (.-localName c)))
       (is (= "content2" (.-textContent c))))
 
@@ -276,11 +278,11 @@
   (let [a (atom 0)
         h1 [:div {:on-click #(swap! a inc)}]
         h2 [:div]
-        el (hipo/create h1)]
+        [el f] (hipo/create-for-update h1)]
 
     (fire-click-event el)
 
-    (hipo/update! el h2)
+    (f h2)
 
     (fire-click-event el)
 
@@ -291,8 +293,8 @@
                   ^{:key i} [:li i])]
         h2 [:ul (for [i (reverse (range 6))]
                   ^{:key i} [:li {:class i} i])]
-        el (hipo/create h1)]
-    (hipo/update! el h2)
+        [el f] (hipo/create-for-update h1)]
+    (f h2)
 
     (is (= 6 (.. el -childNodes -length)))
     (is (= "5" (.. el -firstChild -textContent)))
@@ -303,13 +305,20 @@
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -nextSibling -textContent)))
     (is (= "0" (.. el -lastChild -textContent)))))
 
+(deftype PrintInterceptor []
+  Interceptor
+  (-intercept [_ t m]
+    (println t m)
+    ; (.time js/console "a")
+    (fn [] (println t "done")#_(.timeEnd js/console "a"))))
+
 (deftest update-keyed-sparse
   (let [h1 [:ul (for [i (range 6)]
                   ^{:key i} [:li i])]
         h2 [:ul (for [i (cons 7 (filter odd? (reverse (range 6))))]
                   ^{:key i} [:li {:class i} i])]
-        el (hipo/create h1)]
-    (hipo/update! el h2)
+        [el f] (hipo/create-for-update h1)]
+    (f h2 {:interceptor (PrintInterceptor.)})
 
     (is (= 4 (.. el -childNodes -length)))
     (is (= "7" (.. el -firstChild -textContent)))
@@ -318,15 +327,25 @@
     (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
 
-(deftype PrintInterceptor []
-  Interceptor
-  (-intercept [_ t m]
-    (println t m)
-   ; (.time js/console "a")
-    (fn [] (println t "done")#_(.timeEnd js/console "a"))))
+(deftest update-state
+  (let [m1 {:children (range 6)}
+        m2 {:children (cons 7 (filter odd? (reverse (range 6))))}
+        f (fn [m]
+            [:ul (for [i (:children m)]
+                   ^{:key i} [:li {:class i} i])])
+        [el uf] (hipo/create-for-update f m1)]
+    (uf m2 {:interceptor (PrintInterceptor.)})
+
+    (is (= 4 (.. el -childNodes -length)))
+    (is (= "7" (.. el -firstChild -textContent)))
+    (is (= "7" (.. el -firstChild -className)))
+    (is (= "5" (.. el -firstChild -nextSibling -textContent)))
+    (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
+    (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
+
+
 
 (deftest interceptor
   (let [i (PrintInterceptor.)
-        el (hipo/create [:div {:class "1"} [:div]])]
-    (hipo/update! el [:div {:class "2"} [:span] [:span]] {:interceptor i})
-    ))
+        [el f] (hipo/create-for-update [:div {:class "1"} [:div]])]
+    (f [:div {:class "2"} [:span] [:span]] #_{:interceptor i})))

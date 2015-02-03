@@ -1,9 +1,7 @@
 (ns hipo
-  (:require [hipo.interpreter])
+  (:require [hipo.interceptor]
+            [hipo.interpreter])
   (:require-macros hipo))
-
-(defn get-template [el] (aget el "hipo_template"))
-(defn set-template! [el h] (aset el "hipo_template" h))
 
 (defn partially-compiled?
   [el]
