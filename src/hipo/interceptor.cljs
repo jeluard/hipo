@@ -15,9 +15,12 @@
       (.profile js/console label)
       (fn [] (.profileEnd js/console label)))))
 
-#_
-(deftype LoggingInterceptor [label]
+(deftype PerformanceInterceptor [label]
   Interceptor
   (-intercept [_ t _]
-    (.profile js/console (str label "-" (name t)))
-    (fn [] (.profileEnd js/console))))
+    (let [mark-begin (str label " begin " t)
+          mark-end (str label " end " t)]
+      (.mark js/performance mark-begin)
+      (fn []
+        (.mark js/performance mark-end)
+        (.measure js/performance (str label " " t) mark-begin mark-end)))))
