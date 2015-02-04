@@ -49,14 +49,13 @@
         id (hic/parse-id node)
         class-str (hic/parse-classes node)
         class-str (if-let [c (:class literal-attrs)] (if class-str (str class-str " " c) (str c)) class-str)
-        element-ns (when (+svg-tags+ tag) +svg-ns+)
-        is (:is literal-attrs)]
-    (let [el (dom/create-element element-ns tag is)]
+        element-ns (when (+svg-tags+ tag) +svg-ns+)]
+    (let [el (dom/create-element element-ns tag)]
       (if class-str
         (set! (.-className el) class-str))
       (if id
         (set! (.-id el) id))
-      (doseq [[k v] (dissoc literal-attrs :class :is)]
+      (doseq [[k v] (dissoc literal-attrs :class)]
         (if v
           (set-attribute! el (name k) nil v)))
       (if children

@@ -1,13 +1,9 @@
 (ns hipo.dom)
 
-(defn create-element [namespace-uri tag is]
+(defn create-element [namespace-uri tag]
   (if namespace-uri
-    (if is
-      (.createElementNS js/document namespace-uri tag is)
-      (.createElementNS js/document namespace-uri tag))
-    (if is
-      (.createElement js/document tag is)
-      (.createElement js/document tag))))
+    (.createElementNS js/document namespace-uri tag)
+    (.createElement js/document tag)))
 
 (defn- element? [el] (if el (= 1 (.-nodeType el))))
 (defn- text-element? [el] (if el (= 3 (.-nodeType el))))
