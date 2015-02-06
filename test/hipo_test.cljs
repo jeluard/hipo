@@ -139,17 +139,16 @@
 
 (deftest custom-elements
   (is (exists? (.-registerElement js/document)))
-  (.registerElement js/document "my-custom-div" #js {:prototype (js/Object.create (.-prototype js/HTMLDivElement) #js {:test #js {:get (fn[] "")}}) :extends "div"})
-  (let [e (hipo/create [:div {:is "my-custom-div"} "content"])]
+  (.registerElement js/document "my-custom" #js {:prototype (js/Object.create (.-prototype js/HTMLDivElement) #js {:test #js {:get (fn[] "")}})})
+  (let [e (hipo/create [:my-custom "content"])]
     (is (exists? (.-test e)))
-    (is (-> e .-tagName (= "DIV")))
-    (is (= "content" (.-textContent e)))
-    (is (= "my-custom-div" (.getAttribute e "is"))))
-  (let [e (hipo/create [:div {:is "my-non-existing-custom-div"} "content"])]
+    (is (-> e .-tagName (= "MY-CUSTOM")))
+    (is (= "content" (.-textConte
+    nt e))))
+  (let [e (hipo/create [:my-non-existing-custom "content"])]
     (is (not (exists? (.-test e))))
-    (is (-> e .-tagName (= "DIV")))
-    (is (= "content" (.-textContent e)))
-    (is (= "my-non-existing-custom-div" (.getAttribute e "is")))))
+    (is (-> e .-tagName (= "MY-NON-EXISTING-CUSTOM")))
+    (is (= "content" (.-textContent e)))))
 
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (hipo/create [:p]))))
