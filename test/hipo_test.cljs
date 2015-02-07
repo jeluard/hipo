@@ -1,7 +1,6 @@
 (ns hipo-test
   (:require [cemerick.cljs.test :as test]
-            [hipo :as hipo
-             ]
+            [hipo :as hipo]
             [hipo.interceptor :refer [Interceptor]]
             [hipo.interpreter :as hi])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
@@ -143,8 +142,7 @@
   (let [e (hipo/create [:my-custom "content"])]
     (is (exists? (.-test e)))
     (is (-> e .-tagName (= "MY-CUSTOM")))
-    (is (= "content" (.-textConte
-    nt e))))
+    (is (= "content" (.-textContent e))))
   (let [e (hipo/create [:my-non-existing-custom "content"])]
     (is (not (exists? (.-test e))))
     (is (-> e .-tagName (= "MY-NON-EXISTING-CUSTOM")))
@@ -304,20 +302,13 @@
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -nextSibling -textContent)))
     (is (= "0" (.. el -lastChild -textContent)))))
 
-(deftype PrintInterceptor []
-  Interceptor
-  (-intercept [_ t m]
-    (println t m)
-    ; (.time js/console "a")
-    (fn [] (println t "done")#_(.timeEnd js/console "a"))))
-
 (deftest update-keyed-sparse
   (let [h1 [:ul (for [i (range 6)]
                   ^{:key i} [:li i])]
         h2 [:ul (for [i (cons 7 (filter odd? (reverse (range 6))))]
                   ^{:key i} [:li {:class i} i])]
         [el f] (hipo/create-for-update h1)]
-    (f h2 {:interceptor (PrintInterceptor.)})
+    (f h2)
 
     (is (= 4 (.. el -childNodes -length)))
     (is (= "7" (.. el -firstChild -textContent)))
@@ -333,7 +324,7 @@
             [:ul (for [i (:children m)]
                    ^{:key i} [:li {:class i} i])])
         [el uf] (hipo/create-for-update f m1)]
-    (uf m2 {:interceptor (PrintInterceptor.)})
+    (uf m2)
 
     (is (= 4 (.. el -childNodes -length)))
     (is (= "7" (.. el -firstChild -textContent)))
@@ -342,9 +333,13 @@
     (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
 
-
+(deftype PrintInterceptor []
+  Interceptor
+  (-intercept [_ t m]
+    (println t m)
+    (fn [] (println t "done"))))
 
 (deftest interceptor
   (let [i (PrintInterceptor.)
         [el f] (hipo/create-for-update [:div {:class "1"} [:div]])]
-    (f [:div {:class "2"} [:span] [:span]] #_{:interceptor i})))
+    (f [:div {:class "2"} [:span] [:span]] {:interceptor i})))
