@@ -26,13 +26,13 @@
                 (do
                   (hipo.interpreter/update! el# @a# nh# int#)
                   (reset! a# nh#)))))])))
-  ([f om]
-    `(if-let [el# (create (~f ~om))]
-       (let [a# (atom ~om)]
+  ([f oo]
+    `(if-let [el# (create (~f ~oo))]
+       (let [a# (atom ~oo)]
          [el#
-          (fn [nm# & [m#]]
+          (fn [no# & [m#]]
             (let [int# (:interceptor m#)]
               (intercept int# :update {:target el#}
                 (do
-                  (hipo.interpreter/update! el# (~f @a#) (~f nm#) int#)
-                  (reset! a# nm#)))))]))))
+                  (hipo.interpreter/update! el# (~f @a#) (~f no#) int#)
+                  (reset! a# no#)))))]))))

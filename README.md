@@ -26,6 +26,15 @@ Note that the hiccup syntax is extended to handle all properties whose name star
 
 `create-for-update` extends `create` by also returning a function that performs DOM reconciliation based on a new hiccup representation.
 
+`create-for-update` can be called in 2 different ways:
+
+As a 1 arity function: the argument is then expected to be a valid hiccup representation. It then returns a reconciliation function accepting another hiccup vector.
+
+As a 2 arity function: the first argument is then expected to be a function and the second a payload. The hiccup representation is the result of calling the function with the payload as unique argument.
+It then returns a reconciliation function accepting another payload as argument.
+
+This second variant is more convenient as components usually keep their general shape across time.
+
 ```clojure
 (let [[el f] (hipo/create-for-update [:div#id.class [:span "1"]])]
   (.appendChild js/document.body el)
@@ -58,7 +67,7 @@ Any DOM changes happening during the reconciliation can be intercepted / prevent
 
 An interceptor must implement the `-intercept` function that receives 2 arguments:
 
-* a keyword type, either `:append`, `:insert-at`, `:move-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute`, `:remove-attribute` and `:update-children`.
+* a keyword type, either `:update`,`:update-children`, `:append`, `:insert-at`, `:move-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
 * a map of relevant details
 
 When called this function can return either:
