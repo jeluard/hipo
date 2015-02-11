@@ -1,6 +1,7 @@
 ## [0.3.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.3.0)
 
 * **[+]** Elements can be reconciliated via a function returned by `hipo.create-for-update`
+* **[~]** Rename `hipo` to `hipo.core` (no more single segment namespace)
 * **[-]** Custom Element **is** syntax (still discussed)
 
 ## [0.2.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.2.0)
