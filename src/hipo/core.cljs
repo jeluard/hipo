@@ -1,7 +1,7 @@
-(ns hipo
+(ns hipo.core
   (:require [hipo.interceptor]
             [hipo.interpreter])
-  (:require-macros hipo))
+  (:require-macros hipo.core))
 
 (defn partially-compiled?
   [el]

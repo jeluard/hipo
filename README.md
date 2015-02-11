@@ -14,7 +14,7 @@ Hipo is available in clojars as `[hipo "0.3.0"]`.
 
 ```clojure
 (ns …
-  (:require [hipo :as hipo]))
+  (:require [hipo.core :as hipo]))
 
 (let [el (hipo/create [:div#id.class {:on-click #(.log js/console "click")} [:span]])]
   (.appendChild js/document.body el))
@@ -77,7 +77,7 @@ When called this function can return either:
 
 ```clojure
 (ns …
-  (:require [hipo :as hipo]
+  (:require [hipo.core :as hipo]
             [hipo.interceptor :refer [Interceptor]]))
 
 (deftype PrintInterceptor []
@@ -177,7 +177,7 @@ Attributes defined via a function (as opposed to literal maps) must be annotated
 
 ```clojure
 (ns …
-  (:require [hipo :as hipo]))
+  (:require [hipo.core :as hipo]))
 
 (hipo/create [:div ^:attrs (merge {:class "class"} {:id "id"}) (fn [] [:span])])
 ```
@@ -200,7 +200,7 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
 
 ```clojure
 (ns …
-  (:require [hipo :as hipo]))
+  (:require [hipo.core :as hipo]))
 
 (let [el (hipo/create [:div#id.class "content"])]
   (hipo/partially-compiled? el)) ; => false

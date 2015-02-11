@@ -3,7 +3,7 @@
             [hipo.dom :as dom]
             [hipo.fast :as f]
             [hipo.hiccup :as hic])
-  (:require-macros [hipo :refer [intercept]]))
+  (:require-macros [hipo.core :refer [intercept]]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})

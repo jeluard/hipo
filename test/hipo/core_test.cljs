@@ -1,10 +1,10 @@
-(ns hipo-test
+(ns hipo.core-test
   (:require [cemerick.cljs.test :as test]
-            [hipo :as hipo]
+            [hipo.core :as hipo]
             [hipo.interceptor :refer [Interceptor]]
             [hipo.interpreter :as hi])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
-                   [hipo.hipo-test]))
+                   [hipo.core-test]))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))

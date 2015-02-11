@@ -1,4 +1,4 @@
-(ns hipo
+(ns hipo.core
   (:require [hipo.compiler :as hc]))
 
 (defmacro create

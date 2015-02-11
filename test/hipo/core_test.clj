@@ -1,4 +1,4 @@
-(ns hipo.hipo-test
+(ns hipo.core-test
   (:require [hipo.compiler :refer [compile-set-attribute!]]))
 
 ; defmacro
