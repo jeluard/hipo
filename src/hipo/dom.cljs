@@ -11,11 +11,8 @@
 (defn child-at
   [el i]
   {:pre [(element? el) (not (neg? i))]}
-  (loop [c 0
-         cel (.-firstChild el)]
-    (if (or (nil? cel) (= i c))
-      cel
-      (recur (inc c) (.-nextSibling cel)))))
+  (aget (.-childNodes el) i))
+
 
 (defn children
   ([el] (children el 0))

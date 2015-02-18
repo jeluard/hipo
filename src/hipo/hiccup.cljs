@@ -63,11 +63,12 @@
    :post [(vector? v)]}
   (if (flattened? v)
     v
-    (loop [acc [] [elt & others] v]
+    (loop [acc (transient [])
+           [elt & others] v]
       (if (nil? elt)
-        acc
+        (persistent! acc)
         (recur
           (if (seq? elt)
-            (apply conj acc elt)
-            (conj acc elt))
+            (f/conjs! acc elt)
+            (conj! acc elt))
           others)))))
