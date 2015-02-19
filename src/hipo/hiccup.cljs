@@ -64,11 +64,12 @@
   (if (flattened? v)
     v
     (loop [acc (transient [])
-           [elt & others] v]
-      (if (nil? elt)
-        (persistent! acc)
-        (recur
-          (if (seq? elt)
-            (f/conjs! acc elt)
-            (conj! acc elt))
-          others)))))
+           v v]
+      (let [f (if (identical? 0 (count v)) nil (nth v 0))]
+        (if (nil? f)
+          (persistent! acc)
+          (recur
+            (if (seq? f)
+              (f/conjs! acc f)
+              (conj! acc f))
+            (subvec v 1)))))))

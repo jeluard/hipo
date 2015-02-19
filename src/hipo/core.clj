@@ -12,7 +12,7 @@
   `(let [o# (if ~int (hipo.interceptor/-intercept ~int ~t ~m))]
      (when-not (false? o#)
        ~body
-       (if (fn? o#)
+       (if (and o# (fn? o#))
          (o#)))))
 
 (defmacro create-for-update

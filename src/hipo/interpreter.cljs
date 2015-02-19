@@ -8,7 +8,7 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
-(defn- listener-name? [s] (= 0 (.indexOf s "on-")))
+(defn- listener-name? [s] (identical? 0 (.indexOf s "on-")))
 (defn- listener-name->event-name [s] (.substring s 3))
 
 (defmulti set-attribute! (fn [_ a _ _] a))
@@ -33,12 +33,18 @@
 
 (declare create-child)
 
+(defn append-child!
+  [el o]
+  (.appendChild el (create-child o)))
+
 (defn append-children!
   [el o]
   (if (seq? o)
-    (doseq [c (filter identity o)]
-      (append-children! el c))
-    (.appendChild el (create-child o))))
+    (loop [s o]
+      (when-not (empty? s)
+        (append-children! el (first s))
+        (recur (rest s))))
+    (append-child! el o)))
 
 (defn create-vector
   [[node-key & rest]]
@@ -58,7 +64,7 @@
       (doseq [[k v] (dissoc literal-attrs :class)]
         (if v
           (set-attribute! el (name k) nil v)))
-      (if children
+      (if (seq children)
         (append-children! el children))
       el)))
 
@@ -154,12 +160,12 @@
           (update! (dom/child-at el i) ov nv int))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
-      (if (= -1 d)
+      (if (identical? -1 d)
         (let [nel (peek nch)]
           (intercept int :append {:target el :value nel}
-            (append-children! el nel)))
+            (append-child! el nel)))
         (let [f (.createDocumentFragment js/document)
-              cs (apply list (if (= 0 oc) nch (subvec nch oc)))]
+              cs (apply list (if (identical? 0 oc) nch (subvec nch oc)))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
           (intercept int :append {:target el :value cs}
             (append-children! f cs))
@@ -179,7 +185,7 @@
 (defn update-vector!
   [el oh nh int]
   {:pre [(vector? oh) (vector? nh)]}
-  (if-not (= (hic/parse-tag-name (name (nth nh 0))) (hic/parse-tag-name (name (nth oh 0))))
+  (if-not (identical? (hic/parse-tag-name (name (nth nh 0))) (hic/parse-tag-name (name (nth oh 0))))
     (let [nel (create nh)]
       (intercept int :replace {:target el :value nel}
         (dom/replace! el nel)))

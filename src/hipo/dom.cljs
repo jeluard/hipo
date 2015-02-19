@@ -5,8 +5,8 @@
     (.createElementNS js/document namespace-uri tag)
     (.createElement js/document tag)))
 
-(defn- element? [el] (if el (= 1 (.-nodeType el))))
-(defn- text-element? [el] (if el (= 3 (.-nodeType el))))
+(defn- element? [el] (if el (identical? 1 (.-nodeType el))))
+(defn- text-element? [el] (if el (identical? 3 (.-nodeType el))))
 
 (defn child-at
   [el i]
