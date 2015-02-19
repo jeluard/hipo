@@ -42,7 +42,8 @@
   (if (seq? o)
     (loop [s o]
       (when-not (empty? s)
-        (append-children! el (first s))
+        (if-let [h (first s)]
+          (append-children! el h))
         (recur (rest s))))
     (append-child! el o)))
 
