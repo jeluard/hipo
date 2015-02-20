@@ -1,3 +1,7 @@
+## [0.4.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.4.0)
+
+* **[~]** Improved Interceptor semantic
+
 ## [0.3.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.3.0)
 
 * **[+]** Elements can be reconciliated via a function returned by `hipo.create-for-update`

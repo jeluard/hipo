@@ -333,13 +333,27 @@
     (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
 
-(deftype PrintInterceptor []
+(deftype FunctionInterceptor []
   Interceptor
-  (-intercept [_ t m]
-    (println t m)
-    (fn [] (println t "done"))))
+  (-intercept [_ t _]
+    ; let update be performed but reject all others
+    (fn [f] (if (= :update t) (f)))))
+
+(deftype BooleanInterceptor [b]
+  Interceptor
+  (-intercept [_ t o]
+    b))
 
 (deftest interceptor
-  (let [i (PrintInterceptor.)
-        [el f] (hipo/create-for-update [:div {:class "1"} [:div]])]
-    (f [:div {:class "2"} [:span] [:span]] {:interceptor i})))
+  (let [[el f] (hipo/create-for-update [:div {:class "1"} [:div]])]
+    (f [:div {:class "2"} [:span] [:span]]
+       {:interceptor (BooleanInterceptor. false)})
+    (is (= "1" (.-className el)))
+
+    (f [:div {:class "3"} [:span] [:span]]
+       {:interceptor (BooleanInterceptor. true)})
+    (is (= "3" (.-className el)))
+
+    (f [:div {:class "4"} [:span] [:span]]
+       {:interceptor (FunctionInterceptor.)})
+    (is (= "3" (.-className el)))))

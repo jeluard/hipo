@@ -73,7 +73,9 @@ An interceptor must implement the `-intercept` function that receives 2 argument
 When called this function can return either:
 
 * false, then associated DOM manipulation is skipped
-* a function that will be called after the manipulation
+* a function that receives as only argument the function performing this specific DOM reconciliation
+
+Beware that preventing some part of the reconciliation might lead to an inconsistent state.
 
 ```clojure
 (ns …
@@ -83,10 +85,9 @@ When called this function can return either:
 (deftype PrintInterceptor []
   Interceptor
   (-intercept [_ t m]
-    (println t m)
     (case t
       :update-attribute false ; cancel all update-attribute
-      :move-at (fn [] (println (:target m) "has been moved"))
+      :move-at (fn [f] (f) (println (:target m) "has been moved"))
       true))
 
 (let [[el f] (hipo/create-for-update
@@ -98,6 +99,8 @@ When called this function can return either:
   (f {:children (reverse (range 6))}
      {:interceptor (MyInterceptor.)}))
 ```
+
+Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interceptor.cljs) are bundled by default.
 
 ## Extensibility
 

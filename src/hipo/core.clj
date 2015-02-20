@@ -9,11 +9,13 @@
 
 (defmacro intercept
   [int t m body]
-  `(let [o# (if ~int (hipo.interceptor/-intercept ~int ~t ~m))]
-     (when-not (false? o#)
-       ~body
-       (if (and o# (fn? o#))
-         (o#)))))
+  `(if-not ~int
+     ~body
+     (let [o# (hipo.interceptor/-intercept ~int ~t ~m)]
+       (if-not (false? o#)
+         (if (fn? o#)
+           (o# (fn [] ~body))
+           ~body)))))
 
 (defmacro create-for-update
   ([oh]
