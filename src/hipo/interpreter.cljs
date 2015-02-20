@@ -3,7 +3,7 @@
             [hipo.dom :as dom]
             [hipo.fast :as f]
             [hipo.hiccup :as hic])
-  (:require-macros [hipo.core :refer [intercept]]))
+  (:require-macros [hipo.interceptor :refer [intercept]]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
@@ -156,10 +156,10 @@
     ; Update all existing node
     (dotimes [i (min oc nc)]
       (let [ov (nth och i)
-            nv (nth nch i)
-            cel (dom/child-at el i)]
-        (if (and (not (identical? ov nv)) cel)
-          (update! cel ov nv int))))
+            nv (nth nch i)]
+        (if-not (identical? ov nv)
+          (if-let [cel (dom/child-at el i)]
+            (update! cel ov nv int)))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)

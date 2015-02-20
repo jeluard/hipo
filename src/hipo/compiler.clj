@@ -1,6 +1,7 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
-            [cljs.analyzer.api :as ana]))
+            [cljs.analyzer.api :as ana]
+            [hipo.interceptor :refer [intercept]]))
 
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
@@ -162,3 +163,13 @@
     (text-content? o &env) `(.createTextNode js/document ~o)
     (vector? o) `(compile-create-vector ~o)
     :else `(hipo.interpreter/create ~o)))
+
+(defmacro compile-update
+  [el f om]
+  `(let [a# (atom ~om)]
+     (fn [no# & [m#]]
+       (let [int# (:interceptor m#)]
+         (intercept int# :update {:target ~el}
+           (do
+             (hipo.interpreter/update! ~el (~f @a#) (~f no#) int#)
+             (reset! a# no#)))))))
