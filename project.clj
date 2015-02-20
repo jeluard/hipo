@@ -15,8 +15,7 @@
            :compiler {:output-to "target/unit-test.js"
                       :optimizations :whitespace
                       :pretty-print true}}}
-   :test-commands {"phantomjs" ["phantomjs" :runner "dev-resources/document-register-element-0.1.6.js" "target/unit-test.js"]
-                   "slimerjs" ["slimerjs" :runner "dev-resources/document-register-element-0.1.6.js" "target/unit-test.js"]}}
+   :test-commands {"slimerjs" ["slimerjs" :runner "dev-resources/document-register-element-0.1.6.js" "target/unit-test.js"]}}
   :aliases {"clean-test" ["do" "clean," "cljsbuild" "test"]
             "clean-install" ["do" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
