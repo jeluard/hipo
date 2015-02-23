@@ -106,7 +106,7 @@ Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interce
 
 ### Attribute handling hook
 
-How attributes are handled can be customized both at compilation time and runtime.
+Attributes handling can be customized by providing an `AttributeHandler` implementation.
 
 ```clojure
 ; this is a clj file
@@ -121,14 +121,16 @@ How attributes are handled can be customized both at compilation time and runtim
 ```clojure
 ; this is a cljs file
 (ns ..
-  (:require [hipo.interpreter :refer [set-attribute!]]
-            [my-custom-methods]))
+  (:require [hipo.interpreter :refer [AttributeHandler]]))
 
-(defmethod set-attribute! "test"
-  [[el a v]]
-  (.setAttribute el a (* 2 v)))
+(deftype MyAttributeHandler []
+  AttributeHandler
+  (-set [_ el n _ nv]
+    (when (= "test" n)
+      (.setAttribute el n (* 2 nv))
+      true)))
 
-(create [:div {:test 1}]) ; will set "test" attribute to 2
+(create [:div {:test 1}] {:attribute-handlers (MyAttributeHandler.)}) ; will set "test" attribute to 2
 ```
 
 This might be useful to handle special events not supported natively (e.g. **on-tap**) or to implement more efficient methods of setting attributes (e.g. via native attributes).

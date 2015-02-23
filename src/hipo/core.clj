@@ -4,9 +4,9 @@
 
 (defmacro create
   "Create a DOM element from hiccup style representation."
-  [h]
+  [h & [m]]
   (if h
-    `(hc/compile-create ~h)))
+    `(hc/compile-create ~h ~m)))
 
 (defmacro create-for-update
   ([oh]
@@ -14,10 +14,11 @@
        (let [a# (atom ~oh)]
          [el#
           (fn [nh# & [m#]]
-            (let [int# (:interceptor m#)]
+            (let [int# (:interceptor m#)
+                  ahs# (hipo.interpreter/attribute-handlers m#)]
               (intercept int# :update {:target el#}
                 (do
-                  (hipo.interpreter/update! el# @a# nh# int#)
+                  (hipo.interpreter/update! el# @a# nh# int# ahs#)
                   (reset! a# nh#)))))])))
   ([f oo]
     `(let [oo# ~oo

@@ -58,35 +58,34 @@
   (if (and (seq? form) (symbol? (first form)))
     (name (first form))))
 
-(defmulti compile-append-form
-  #(form-name (second %)))
+(defmulti compile-append-form (fn [_ f _] (form-name f)))
 
 (defmethod compile-append-form "for"
-  [[el [_ bindings body]]]
-  `(doseq ~bindings (compile-append-child ~el ~body)))
+  [el [_ bindings body] ahs]
+  `(doseq ~bindings (compile-append-child ~el ~body ~ahs)))
 
 (defmethod compile-append-form "if"
-  [[el [_ condition & body]]]
+  [el [_ condition & body] ahs]
   (if (= 1 (count body))
-    `(if ~condition (compile-append-child ~el ~(first body)))
-    `(if ~condition (compile-append-child ~el ~(first body))
-                    (compile-append-child ~el ~(second body)))))
+    `(if ~condition (compile-append-child ~el ~(first body) ~ahs))
+    `(if ~condition (compile-append-child ~el ~(first body) ~ahs)
+                    (compile-append-child ~el ~(second body) ~ahs))))
 
 (defmethod compile-append-form "when"
-  [[el [_ condition & body]]]
+  [el [_ condition & body] ahs]
   (assert (= 1 (count body)) "Only a single form is supported with when")
-  `(if ~condition (compile-append-child ~el ~(last body))))
+  `(if ~condition (compile-append-child ~el ~(last body) ~ahs)))
 
 (defmethod compile-append-form "list"
-  [[el [_ & body]]]
-  `(do ~@(for [o body] `(compile-append-child ~el ~o))))
+  [el [_ & body] ahs]
+  `(do ~@(for [o body] `(compile-append-child ~el ~o ~ahs))))
 
 (defmethod compile-append-form :default
-  [[el o]]
+  [el o ahs]
   (when o
     `(let [o# ~o]
        (if o#
-         (hipo.interpreter/append-to-parent ~el o#)))))
+         (hipo.interpreter/append-to-parent ~el o# ~ahs)))))
 
 (defn text-compliant-hint?
   [data env]
@@ -105,11 +104,11 @@
       (text-compliant-hint? data env)))
 
 (defmacro compile-append-child
-  [el data]
+  [el data ahs]
   (cond
     (text-content? data &env) `(.appendChild ~el (.createTextNode js/document ~data))
-    (vector? data) `(.appendChild ~el (compile-create-vector ~data))
-    :else (compile-append-form [el data])))
+    (vector? data) `(.appendChild ~el (compile-create-vector ~data ~ahs))
+    :else (compile-append-form el data ahs)))
 
 (defn compile-class
   [literal-attrs class-keyword]
@@ -122,7 +121,7 @@
       literal-class)))
 
 (defmacro compile-create-vector
-  [[node-key & rest]]
+  [[node-key & rest] ahs]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
         var-attrs (when (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
@@ -148,21 +147,21 @@
                  ~(if class
                     `(if (= :class ~k)
                        (set! (.-className ~el) (str ~(str class " ") ~v))
-                       (hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))
-                    `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))))))
+                       (hipo.interpreter/set-attribute! ~el (name ~k) nil ~v ~ahs))
+                    `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v ~ahs))))))
        ~@(when (seq children)
           (if (every? #(text-content? % &env) children)
             `[(set! (.-textContent ~el) (str ~@children))]
             (for [c (filter identity children)]
-              `(compile-append-child ~el ~c))))
+              `(compile-append-child ~el ~c ~ahs))))
        ~el))))
 
 (defmacro compile-create
-  [o]
+  [o m]
   (cond
     (text-content? o &env) `(.createTextNode js/document ~o)
-    (vector? o) `(compile-create-vector ~o)
-    :else `(hipo.interpreter/create ~o)))
+    (vector? o) `(compile-create-vector ~o (hipo.interpreter/attribute-handlers ~m))
+    :else `(hipo.interpreter/create ~o (hipo.interpreter/attribute-handlers ~m))))
 
 (defmacro compile-update
   [el f om]
@@ -171,5 +170,5 @@
        (let [int# (:interceptor m#)]
          (intercept int# :update {:target ~el}
            (do
-             (hipo.interpreter/update! ~el (~f @a#) (~f no#) int#)
+             (hipo.interpreter/update! ~el (~f @a#) (~f no#) int# (hipo.interpreter/attribute-handlers m#))
              (reset! a# no#)))))))

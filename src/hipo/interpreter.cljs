@@ -8,47 +8,69 @@
 (def +svg-ns+ "http://www.w3.org/2000/svg")
 (def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 
+(defprotocol AttributeHandler
+  (-set [_ el n ov nv]))
+
+#_
+(deftype AsPropertyAttributeHandler []
+  AttributeHandler
+  (-set [_ el n ov nv]
+    ))
+
+(deftype DefaultAttributeHandler []
+  AttributeHandler
+  (-set [_ el n _ nv]
+    (if nv
+      (.setAttribute el n nv)
+      (.removeAttribute el n))
+    true))
+
 (defn- listener-name? [s] (identical? 0 (.indexOf s "on-")))
 (defn- listener-name->event-name [s] (.substring s 3))
 
-(defmulti set-attribute! (fn [_ a _ _] a))
+(deftype ListenerAttributeHandler []
+  AttributeHandler
+  (-set [_ el n ov nv]
+    (when (listener-name? n)
+      (if ov
+        (.removeEventListener el (listener-name->event-name n) ov))
+      (if nv
+        (.addEventListener el (listener-name->event-name n) nv))
+      true)))
 
-(defmethod set-attribute! "checked" [el a _ v] (set! (.-checked el) v))
+(def ^:dynamic *default-attribute-handlers* [(ListenerAttributeHandler.) (DefaultAttributeHandler.)])
 
-(defmethod set-attribute! :default
-  [el a ov nv]
-  (if (listener-name? a)
-    (if-not ov (.addEventListener el (listener-name->event-name a) nv)) ; Only one listeners added: when previous value was nil
-    (.setAttribute el a nv)))
+(defn attribute-handlers
+  [m]
+  (if-let [s (:attribute-handlers m)]
+    (apply conj s *default-attribute-handlers*)
+    *default-attribute-handlers*))
 
-(defmulti remove-attribute! (fn [_ a _] a))
-
-(defmethod remove-attribute! "checked" [el a _] (set! (.-checked el) false))
-
-(defmethod remove-attribute! :default
-  [el a ov]
-  (if (listener-name? a)
-    (.removeEventListener el (listener-name->event-name a) ov)
-    (.removeAttribute el a)))
+(defn set-attribute!
+  [el n ov nv ahs]
+  (loop [s ahs]
+    (if-let [f (first s)]
+      (if-not (-set f el n ov nv)
+        (recur (rest s))))))
 
 (declare create-child)
 
 (defn append-child!
-  [el o]
-  (.appendChild el (create-child o)))
+  [el o ahs]
+  (.appendChild el (create-child o ahs)))
 
 (defn append-children!
-  [el o]
+  [el o ahs]
   (if (seq? o)
     (loop [s o]
       (when-not (empty? s)
         (if-let [h (first s)]
-          (append-children! el h))
+          (append-children! el h ahs))
         (recur (rest s))))
-    (append-child! el o)))
+    (append-child! el o ahs)))
 
 (defn create-vector
-  [[node-key & rest]]
+  [[node-key & rest] ahs]
   (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
         children (if literal-attrs (drop 1 rest) rest)
         node (name node-key)
@@ -64,9 +86,9 @@
         (set! (.-id el) id))
       (doseq [[k v] (dissoc literal-attrs :class)]
         (if v
-          (set-attribute! el (name k) nil v)))
+          (set-attribute! el (name k) nil v ahs)))
       (if (seq children)
-        (append-children! el children))
+        (append-children! el children ahs))
       el)))
 
 (defn mark-as-partially-compiled!
@@ -76,44 +98,44 @@
     (do (aset el "hipo-partially-compiled" true) el)))
 
 (defn create-child
-  [o]
+  [o ahs]
   {:pre [(or (hic/literal? o) (vector? o))]}
   (if (hic/literal? o) ; literal check is much more efficient than vector check
     (.createTextNode js/document o)
-    (create-vector o)))
+    (create-vector o ahs)))
 
 (defn append-to-parent
-  [el o]
+  [el o ahs]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled! el)
-  (append-children! el o))
+  (append-children! el o ahs))
 
 (defn create
-  [o]
+  [o ahs]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled!
     (if (seq? o)
       (let [f (.createDocumentFragment js/document)]
-        (append-children! f o)
+        (append-children! f o ahs)
         f)
-      (create-child o))))
+      (create-child o ahs))))
 
 ; Update
 
 (defn update-attributes!
-  [el om nm int]
+  [el om nm int ahs]
   (doseq [[nk nv] nm
           :let [ov (nk om) n (name nk)]]
     (if-not (identical? ov nv)
       (if nv
         (intercept int :update-attribute {:target el :name n :value nv}
-          (set-attribute! el n ov nv))
+          (set-attribute! el n ov nv ahs))
         (intercept int :remove-attribute {:target el :name n}
-          (remove-attribute! el n ov)))))
+          (set-attribute! el n ov nil ahs)))))
   (doseq [k (set/difference (set (keys om)) (set (keys nm)))
           :let [n (name k) ov (k om)]]
     (intercept int :remove-attribute {:target el :name n}
-      (remove-attribute! el n ov))))
+      (set-attribute! el n ov nil ahs))))
 
 (declare update!)
 
@@ -122,7 +144,7 @@
 (defn keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (nth ih 1)) ih])))
 
 (defn update-keyed-children!
-  [el och nch int]
+  [el och nch int ahs]
   (let [om (keyed-children->map och)
         nm (keyed-children->indexed-map nch)
         cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
@@ -133,10 +155,10 @@
           (if (identical? oh h)
             (dom/insert-child-at! el ii (nth cs i))
             (let [ncel (.removeChild el (nth cs i))]
-              (update! ncel oh h int)
+              (update! ncel oh h int ahs)
               (dom/insert-child-at! el ii ncel)))); TODO improve perf by relying on (cs ii)? index should be updated based on new insertions
         ; new node
-        (let [nel (create-child h)]
+        (let [nel (create-child h ahs)]
           (intercept int :insert-at {:target el :value nel :index ii}
             (dom/insert-child-at! el ii nel)))))
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
@@ -144,7 +166,7 @@
         (dom/remove-trailing-children! el d)))))
 
 (defn update-non-keyed-children!
-  [el och nch int]
+  [el och nch int ahs]
   (let [oc (count och)
         nc (count nch)
         d (- oc nc)]
@@ -159,36 +181,36 @@
             nv (nth nch i)]
         (if-not (identical? ov nv)
           (if-let [cel (dom/child-at el i)]
-            (update! cel ov nv int)))))
+            (update! cel ov nv int ahs)))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
         (let [nel (peek nch)]
           (intercept int :append {:target el :value nel}
-            (append-child! el nel)))
+            (append-child! el nel ahs)))
         (let [f (.createDocumentFragment js/document)
               cs (apply list (if (identical? 0 oc) nch (subvec nch oc)))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
           (intercept int :append {:target el :value cs}
-            (append-children! f cs))
+            (append-children! f cs ahs))
           (.appendChild el f))))))
 
 (defn keyed-children? [v] (not (nil? (child-key (nth v 0)))))
 
 (defn update-children!
-  [el och nch int]
+  [el och nch int ahs]
   (if (f/emptyv? nch)
     (intercept int :clear {:target el}
       (dom/clear! el))
     (if (keyed-children? nch)
-      (update-keyed-children! el och nch int)
-      (update-non-keyed-children! el och nch int))))
+      (update-keyed-children! el och nch int ahs)
+      (update-non-keyed-children! el och nch int ahs))))
 
 (defn update-vector!
-  [el oh nh int]
+  [el oh nh int ahs]
   {:pre [(vector? oh) (vector? nh)]}
   (if-not (identical? (hic/parse-tag-name (name (nth nh 0))) (hic/parse-tag-name (name (nth oh 0))))
-    (let [nel (create nh)]
+    (let [nel (create nh ahs)]
       (intercept int :replace {:target el :value nel}
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
@@ -197,15 +219,15 @@
           nch (hic/children nh)]
       (if-not (identical? och nch)
         (intercept int :update-children {:target el}
-          (update-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
+          (update-children! el (hic/flatten-children och) (hic/flatten-children nch) int ahs)))
       (if-not (identical? om nm)
-        (update-attributes! el om nm int)))))
+        (update-attributes! el om nm int ahs)))))
 
 (defn update!
-  [el ph h int]
+  [el ph h int ahs]
   {:pre [(or (vector? h) (hic/literal? h))]}
   (if (hic/literal? h) ; literal check is much more efficient than vector check
     (if-not (identical? ph h)
       (intercept int :replace {:target el :value h}
         (dom/replace-text! el h)))
-    (update-vector! el ph h int)))
+    (update-vector! el ph h int ahs)))

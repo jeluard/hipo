@@ -2,7 +2,7 @@
   (:require [cemerick.cljs.test :as test]
             [hipo.core :as hipo]
             [hipo.interceptor :refer [Interceptor]]
-            [hipo.interpreter :as hi])
+            [hipo.interpreter :as hi :refer [AttributeHandler]])
   (:require-macros [cemerick.cljs.test :refer [deftest is]]
                    [hipo.core-test]))
 
@@ -114,12 +114,15 @@
 
 (defn my-custom [] [:div {:test3 1 :test4 1}])
 
-(defmethod hi/set-attribute! "test4"
-  [el a _ v]
-  (.setAttribute el a (* 2 v)))
+(deftype MyAttributeHandler []
+  AttributeHandler
+  (-set [_ el n _ nv]
+    (when (= "test4" n)
+      (.setAttribute el n (* 2 nv))
+      true)))
 
 (deftest custom-attribute
-  (let [e (hipo/create [:div {:test 1 :test2 1} (my-custom)])]
+  (let [e (hipo/create [:div {:test 1 :test2 1} (my-custom)] {:attribute-handlers [(MyAttributeHandler.)]})]
     (is (hipo/partially-compiled? e))
     (is (= "1" (.getAttribute e "test")))
     (is (= "2" (.getAttribute e "test2")))
