@@ -102,55 +102,6 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
 
 Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interceptor.cljs) are bundled by default.
 
-## Extensibility
-
-### Attribute handling hook
-
-Attributes handling can be customized by providing an `AttributeHandler` implementation.
-
-```clojure
-; this is a clj file
-(ns my-custom-methods
-  (:require [hipo.compiler :refer [compile-set-attribute!]]))
-
-(defmethod compile-set-attribute! "test"
-  [[el a v]]
-  `(.setAttribute ~el ~a ~(* 2 v)))
-```
-
-```clojure
-; this is a cljs file
-(ns ..
-  (:require [hipo.interpreter :refer [AttributeHandler]]))
-
-(deftype MyAttributeHandler []
-  AttributeHandler
-  (-set [_ el n _ nv]
-    (when (= "test" n)
-      (.setAttribute el n (* 2 nv))
-      true)))
-
-(create [:div {:test 1}] {:attribute-handlers (MyAttributeHandler.)}) ; will set "test" attribute to 2
-```
-
-This might be useful to handle special events not supported natively (e.g. **on-tap**) or to implement more efficient methods of setting attributes (e.g. via native attributes).
-
-### Form compilation hook
-
-Some forms can be optimised to increase compilation level.
-
-Default hooks are shipped for `for`, `if`, `when` and `list`. Complex hiccup vectors are then fully compiled:
-
-```clojure
-(defn [s]
-  (hipo/create
-    [:div
-      (when s [:h2 s])
-      [:ul
-        (for [i (range 50)]
-          [:li (str "content-" i)])]]))
-```
-
 ## Performance
 
 ### Creation

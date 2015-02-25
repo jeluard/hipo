@@ -1,10 +1,8 @@
 (ns hipo.core-test
   (:require [cemerick.cljs.test :as test]
             [hipo.core :as hipo]
-            [hipo.interceptor :refer [Interceptor]]
-            [hipo.interpreter :as hi :refer [AttributeHandler]])
-  (:require-macros [cemerick.cljs.test :refer [deftest is]]
-                   [hipo.core-test]))
+            [hipo.interceptor :refer [Interceptor]])
+  (:require-macros [cemerick.cljs.test :refer [deftest is]]))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))
@@ -102,32 +100,15 @@
     (is (nil? (.getAttribute e2 "selected")))
     (is (nil? (.getAttribute e3 "selected")))))
 
-(defn my-div [] [:div {:on-click (fn [])}])
+(defn my-div [] [:div {:on-dragend (fn [])}])
 
 (deftest listener
-  (let [e (hipo/create [:div {:on-click (fn [])}])]
+  (let [e (hipo/create [:div {:on-drag (fn [])}])]
     (is (not (hipo/partially-compiled? e)))
-    (is (nil? (.getAttribute e "on-click"))))
+    (is (nil? (.getAttribute e "on-drag"))))
   (let [e (hipo/create (my-div))]
     (is (hipo/partially-compiled? e))
-    (is (nil? (.getAttribute e "on-click")))))
-
-(defn my-custom [] [:div {:test3 1 :test4 1}])
-
-(deftype MyAttributeHandler []
-  AttributeHandler
-  (-set [_ el n _ nv]
-    (when (= "test4" n)
-      (.setAttribute el n (* 2 nv))
-      true)))
-
-(deftest custom-attribute
-  (let [e (hipo/create [:div {:test 1 :test2 1} (my-custom)] {:attribute-handlers [(MyAttributeHandler.)]})]
-    (is (hipo/partially-compiled? e))
-    (is (= "1" (.getAttribute e "test")))
-    (is (= "2" (.getAttribute e "test2")))
-    (is (= "1" (.getAttribute (.-firstChild e) "test3")))
-    (is (= "2" (.getAttribute (.-firstChild e) "test4")))))
+    (is (nil? (.getAttribute e "on-dragend")))))
 
 (defn my-nil [] [:div nil "content" nil])
 
