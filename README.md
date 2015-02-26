@@ -138,6 +138,8 @@ Attributes defined via a function (as opposed to literal maps) must be annotated
 (hipo/create [:div ^:attrs (merge {:class "class"} {:id "id"}) (fn [] [:span])])
 ```
 
+Note that using `^:attrs` increase the size of compiled code, especially when used with inline id/classes (e.g. `[:div#id#class]`) thus is best avoided.
+
 When the hiccup representation can't be fully compiled the remaining hiccup elements are interpreted at runtime. This might happen when functions or parameters are used.
 Once in interpreted mode any nested child will not be compiled even if it is a valid candidate for compilation.
 
@@ -161,10 +163,6 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
 (let [el (hipo/create [:div#id.class "content"])]
   (hipo/partially-compiled? el)) ; => false
 ```
-
-### Reconciliation
-
-A diff / patch style approach is used
 
 ### Type-Hinting
 
