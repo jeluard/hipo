@@ -201,3 +201,15 @@
       (intercept int :replace {:target el :value h}
         (dom/replace-text! el h)))
     (update-vector! el ph h int)))
+
+(defn create-for-update
+  [oh]
+  (if-let [el (create oh)]
+    (let [a (atom oh)]
+      [el
+       (fn [nh & [m]]
+         (let [int (:interceptor m)]
+           (intercept int :update {:target el}
+             (do
+               (hipo.interpreter/update! el @a nh int)
+               (reset! a nh)))))])))
