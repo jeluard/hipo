@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-2850"]]
+   {:dependencies [[org.clojure/clojurescript "0.0-2913"]]
     :plugins [[lein-cljsbuild "1.0.5"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
   :cljsbuild
