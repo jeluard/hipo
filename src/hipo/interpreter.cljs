@@ -36,7 +36,7 @@
   [el v]
   {:pre [(vector? v)]}
   (loop [v (hic/flatten-children v)]
-    (when-not (empty? v)
+    (when-not (f/emptyv? v)
       (if-let [h (nth v 0)]
         (append-child! el h))
       (recur (rest v)))))

@@ -53,7 +53,8 @@
         (if (or id cs)
           (merge m? (if id {:id id}) (if cs {:class (if-let [c (:class m?)] (if cs (str cs " " c) (str c)) cs)}))
           m?))
-      {:id id :class cs})))
+      (if (or id cs)
+        {:id id :class cs}))))
 
 (defn children
   [v]
