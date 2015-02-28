@@ -21,8 +21,17 @@
   (is (= "class1 class2" (hi/parse-classes "div.class1.class2")))
   (is (= "class1 class2" (hi/parse-classes "div#id.class1.class2"))))
 
+(deftest flattened?
+  (is (true? (hi/flattened? nil)))
+  (is (true? (hi/flattened? [])))
+  (is (true? (hi/flattened? ["content"])))
+  (is (true? (hi/flattened? [nil "content" nil])))
+  (is (true? (hi/flattened? [[:div] [:div]])))
+  (is (false? (hi/flattened? [(list [:div])]))))
+
 (deftest flatten-children
   (is (= ["content"] (hi/flatten-children ["content"])))
   (is (= [[:div]] (hi/flatten-children [[:div]])))
   (is (= [[:div] "content"] (hi/flatten-children [[:div] "content"])))
+  (is (= [nil "content" nil] (hi/flatten-children [nil "content" nil])))
   (is (= [[:div] [:span]] (hi/flatten-children [[:div] '([:span])]))))

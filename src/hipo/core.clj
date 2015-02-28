@@ -11,7 +11,9 @@
 (defmacro create-for-update
   "Create a DOM element and associated reconciliation function. Returned as an vector `[el f]."
   ([oh]
-    `(hipo.interpreter/create-for-update ~oh))
+   `(let [oh# ~oh]
+      (if-let [el# (create oh#)]
+        (hipo.interpreter/create-for-update el# oh#))))
   ([f oo]
     `(let [oo# ~oo
            f# ~f]

@@ -19,9 +19,12 @@
         (.removeEventListener el (listener-name->event-name n) ov))
       (if nv
         (.addEventListener el (listener-name->event-name n) nv)))
-    (if nv
-      (.setAttribute el n nv)
-      (.removeAttribute el n))))
+    (condp = n
+      "id" (set! (.-id el) nv)
+      "class" (set! (.-className el) nv)
+      (if nv
+        (.setAttribute el n nv)
+        (.removeAttribute el n)))))
 
 (declare create-child)
 
@@ -30,36 +33,27 @@
   (.appendChild el (create-child o)))
 
 (defn append-children!
-  [el o]
-  (if (seq? o)
-    (loop [s o]
-      (when-not (empty? s)
-        (if-let [h (first s)]
-          (append-children! el h))
-        (recur (rest s))))
-    (append-child! el o)))
+  [el v]
+  {:pre [(vector? v)]}
+  (loop [v (hic/flatten-children v)]
+    (when-not (empty? v)
+      (if-let [h (nth v 0)]
+        (append-child! el h))
+      (recur (rest v)))))
 
 (defn create-vector
-  [[node-key & rest]]
-  (let [literal-attrs (when-let [f (first rest)] (when (map? f) f))
-        children (if literal-attrs (drop 1 rest) rest)
-        node (name node-key)
-        tag (hic/parse-tag-name node)
-        id (hic/parse-id node)
-        class-str (hic/parse-classes node)
-        class-str (if-let [c (:class literal-attrs)] (if class-str (str class-str " " c) (str c)) class-str)
-        element-ns (when (+svg-tags+ tag) +svg-ns+)]
-    (let [el (dom/create-element element-ns tag)]
-      (if class-str
-        (set! (.-className el) class-str))
-      (if id
-        (set! (.-id el) id))
-      (doseq [[k v] (dissoc literal-attrs :class)]
-        (if v
-          (set-attribute! el (name k) nil v)))
-      (if (seq children)
-        (append-children! el children))
-      el)))
+  [h]
+  {:pre [(vector? h)]}
+  (let [tag (hic/tag h)
+        attrs (hic/attributes h)
+        children (hic/children h)
+        element-ns (if (+svg-tags+ tag) +svg-ns+)
+        el (dom/create-element element-ns tag)]
+    (doseq [[k v] attrs]
+      (if v
+        (set-attribute! el (name k) nil v)))
+    (append-children! el children)
+    el))
 
 (defn mark-as-partially-compiled!
   [el]
@@ -78,7 +72,9 @@
   [el o]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled! el)
-  (append-children! el o))
+  (if (seq? o)
+    (append-children! el (vec o))
+    (append-child! el o)))
 
 (defn create
   [o]
@@ -86,7 +82,7 @@
   (mark-as-partially-compiled!
     (if (seq? o)
       (let [f (.createDocumentFragment js/document)]
-        (append-children! f o)
+        (append-children! f (vec o))
         f)
       (create-child o))))
 
@@ -155,11 +151,11 @@
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
-        (let [nel (peek nch)]
-          (intercept int :append {:target el :value nel}
-            (append-child! el nel)))
+        (let [h (peek nch)]
+          (intercept int :append {:target el :value h}
+            (append-child! el h)))
         (let [f (.createDocumentFragment js/document)
-              cs (apply list (if (identical? 0 oc) nch (subvec nch oc)))]
+              cs (if (identical? 0 oc) nch (subvec nch oc))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
           (intercept int :append {:target el :value cs}
             (append-children! f cs))
@@ -179,7 +175,7 @@
 (defn update-vector!
   [el oh nh int]
   {:pre [(vector? oh) (vector? nh)]}
-  (if-not (identical? (hic/parse-tag-name (name (nth nh 0))) (hic/parse-tag-name (name (nth oh 0))))
+  (if-not (identical? (hic/tag nh) (hic/tag oh))
     (let [nel (create nh)]
       (intercept int :replace {:target el :value nel}
         (dom/replace! el nel)))
@@ -203,13 +199,12 @@
     (update-vector! el ph h int)))
 
 (defn create-for-update
-  [oh]
-  (if-let [el (create oh)]
-    (let [a (atom oh)]
-      [el
-       (fn [nh & [m]]
-         (let [int (:interceptor m)]
-           (intercept int :update {:target el}
-             (do
-               (hipo.interpreter/update! el @a nh int)
-               (reset! a nh)))))])))
+  [el oh]
+  (let [a (atom oh)]
+    [el
+     (fn [nh & [m]]
+       (let [int (:interceptor m)]
+         (intercept int :update {:target el}
+           (do
+             (hipo.interpreter/update! el @a nh int)
+             (reset! a nh)))))]))

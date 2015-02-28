@@ -17,7 +17,7 @@
 (defn parse-id
   [s]
   (let [i (.indexOf s id-separator)]
-    (when (pos? i)
+    (if (pos? i)
       (let [j (.indexOf s class-separator)]
         (if (pos? j)
           (.substr s (inc i) (- j i 1))
@@ -33,11 +33,27 @@
   [o]
   (or (string? o) (number? o) (true? o) (false? o)))
 
+(defn node
+  [v]
+  (name (nth v 0)))
+
+(defn tag
+  [v]
+  (parse-tag-name (node v)))
+
 (defn attributes
   [v]
-  (if-let [m (nth v 1 nil)]
-    (if (map? m)
-      m)))
+  (let [n (node v)
+        id (parse-id n)
+        cs (parse-classes n)
+        m? (nth v 1 nil)]
+    (if (map? m?)
+      (if (and id (contains? m? :id))
+        (throw (ex-info "Cannot define id multiple times" {}))
+        (if (or id cs)
+          (merge m? (if id {:id id}) (if cs {:class (if-let [c (:class m?)] (if cs (str cs " " c) (str c)) cs)}))
+          m?))
+      {:id id :class cs})))
 
 (defn children
   [v]
@@ -47,15 +63,17 @@
 
 (defn flattened?
   [v]
+  {:pre [(or (nil? v) (vector? v))]}
   (if (f/emptyv? v)
     true
     (let [c (dec (count v))]
       (loop [i 0]
         (let [o (nth v i)]
-          (if (or (literal? o) (vector? o))
+          (if (or (nil? o) (literal? o) (vector? o))
             (if (identical? c i)
               true
-              (recur (inc i)))))))))
+              (recur (inc i)))
+            false))))))
 
 (defn flatten-children
   [v]

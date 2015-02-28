@@ -118,7 +118,7 @@
     (is (= "content" (.-textContent e))))
   (let [e (hipo/create (my-nil))]
     (is (hipo/partially-compiled? e))
-    (is (= "content" (.-textContent (.-firstChild e))))))
+    (is (= "content" (.-textContent e)))))
 
 (deftest custom-elements
   (is (exists? (.-registerElement js/document)))
@@ -180,12 +180,13 @@
     (is (false? (hipo/partially-compiled? e)))))
 
 (deftest update-simple
-  (let [h1 [:div "a"]
-        h2 [:div "b"]
+  (let [h1 [:div#id1 "a"]
+        h2 [:div#id2 "b"]
         [el f] (hipo/create-for-update h1)]
     (f h2)
 
-    (is (= "b" (.-textContent el)))))
+    (is (= "b" (.-textContent el)))
+    (is (= "id2" (.-id el)))))
 
 (deftest update-nested
   (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
