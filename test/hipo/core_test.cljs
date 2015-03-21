@@ -25,23 +25,25 @@
         e (hipo/create [:span {:attr (next-id)}])]
     (is (= "1" (.getAttribute e "attr"))))
   (let [e (hipo/create [:div#id {:class "class1 class2"}])]
-    (is (= "class1 class2" (.-className e))))
+    (is (= "class1 class2" (.getAttribute e "class"))))
   (let [e (hipo/create [:div#id.class1 {:class "class2 class3"}])]
-    (is (= "class1 class2 class3" (.-className e))))
+    (is (= "class1 class2 class3" (.getAttribute e "class"))))
+  (let [e (hipo/create [:g {:class "class1"}])]
+    (is (= "class1" (.getAttribute e "class"))))
   (let [cs "class1 class2"
         e (hipo/create [:div ^:attrs (merge {} {:class cs})])]
-    (is (= "class1 class2" (.-className e))))
+    (is (= "class1 class2" (.getAttribute e "class"))))
   (let [cs "class2 class3"
         e (hipo/create [:div (list [:div#id.class1 {:class cs}])])]
     (is (= "class1 class2 class3" (.-className (.-firstChild e)))))
   (let [e (hipo/create [:div.class1 ^:attrs (merge {:data-attr ""} {:class "class2 class3"})])]
-    (is (= "class1 class2 class3" (.-className e))))
+    (is (= "class1 class2 class3" (.getAttribute e "class"))))
   (let [e (hipo/create [:div (interpose [:br] (repeat 3 "test"))])]
     (is (= 5 (.. e -childNodes -length)))
     (is (= "test" (.. e -firstChild -textContent))))
   (let [e (hipo/create [:div.class1 [:span#id1 "span1"] [:span#id2 "span2"]])]
     (is (= "span1span2" (.-textContent e)))
-    (is (= "class1" (.-className e)))
+    (is (= "class1" (.getAttribute e "class")))
     (is (= 2 (-> e .-childNodes .-length)))
     (is (= "<span id=\"id1\">span1</span><span id=\"id2\">span2</span>"
            (.-innerHTML e)))

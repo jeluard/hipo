@@ -136,7 +136,7 @@
        ~(when id-keyword
           `(set! (.-id ~el) ~id-keyword))
        ~(when class
-          `(set! (.-className ~el) ~class))
+          `(.setAttribute ~el "class" ~class))
        ~@(for [[k v] (dissoc literal-attrs :class)]
            `(compile-set-attribute!* ~el ~k ~v))
        ~(when var-attrs

@@ -52,7 +52,7 @@
         element-ns (when (+svg-tags+ tag) +svg-ns+)]
     (let [el (dom/create-element element-ns tag)]
       (if class-str
-        (set! (.-className el) class-str))
+        (.setAttribute el "class" class-str))
       (if id
         (set! (.-id el) id))
       (doseq [[k v] (dissoc literal-attrs :class)]
