@@ -23,11 +23,21 @@
           (.substr s (inc i) (- j i 1))
           (.substr s (inc i)))))))
 
-(defn parse-classes
+;; This code replacing only the first class-separator
+#_(defn parse-classes
   [s]
   (let [i (.indexOf s class-separator)]
     (if (pos? i)
       (.replace (.substr s (inc i)) class-separator " "))))
+
+;; This code replacing all separators
+(defn parse-classes
+  [s]
+  (loop [s s]
+    (let [i (.indexOf s class-separator)]
+      (if (pos? i) (recur (.replace (.substr s (inc i)) class-separator " "))
+          s))))  
+  
 
 (defn literal?
   [o]
