@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-2913"]]
+   {:dependencies [[org.clojure/clojurescript "0.0-3165"]
+                   [cljsjs/document-register-element "0.2.1-0"]]
     :plugins [[lein-cljsbuild "1.0.5"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
   :cljsbuild
@@ -15,7 +16,7 @@
            :compiler {:output-to "target/unit-test.js"
                       :optimizations :whitespace
                       :pretty-print true}}}
-   :test-commands {"slimerjs" ["slimerjs" :runner "dev-resources/document-register-element-0.1.6.js" "target/unit-test.js"]}}
+   :test-commands {"slimerjs" ["phantomjs" :runner "target/unit-test.js"]}}
   :aliases {"clean-test" ["do" "clean," "cljsbuild" "test"]
             "clean-install" ["do" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}

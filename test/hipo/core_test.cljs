@@ -1,7 +1,8 @@
 (ns hipo.core-test
   (:require [cemerick.cljs.test :as test]
             [hipo.core :as hipo]
-            [hipo.interceptor :refer [Interceptor]])
+            [hipo.interceptor :refer [Interceptor]]
+            cljsjs.document-register-element)
   (:require-macros [cemerick.cljs.test :refer [deftest is]]))
 
 (deftest simple
