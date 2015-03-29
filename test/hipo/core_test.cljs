@@ -189,72 +189,75 @@
     (is (= "b" (.-textContent el)))
     (is (= "id2" (.-id el)))))
 
-(deftest update-nested
-  (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
-        h2 [:div {:attr1 nil :attr2 nil} [:span]]
-        h3 [:div]
-        h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
-        [el f] (hipo/create-for-update h1)
-        o (js/MutationObserver. identity)]
-    (.observe o el #js {:attributes true :childList true :characterData: true :subtree true})
+(if (exists? js/MutationObserver)
+  (deftest update-nested
+    (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
+          h2 [:div {:attr1 nil :attr2 nil} [:span]]
+          h3 [:div]
+          h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
+          [el f] (hipo/create-for-update h1)
+          o (js/MutationObserver. identity)]
+      (.observe o el #js {:attributes true :childList true :characterData: true :subtree true})
 
-    (is "div" (.-localName el))
-    (is (= 2 (.-childElementCount el)))
+      (is "div" (.-localName el))
+      (is (= 2 (.-childElementCount el)))
 
-    (f h1)
+      (f h1)
 
-    (is (= 0 (count (array-seq (.takeRecords o)))))
+      (is (= 0 (count (array-seq (.takeRecords o)))))
 
-    (f h2)
+      (f h2)
 
-    (is (not (.hasAttribute el "class")))
-    (is (not (.hasAttribute el "attr1")))
-    (is (not (.hasAttribute el "attr2")))
-    (is (= 1 (.-childElementCount el)))
+      (is (not (.hasAttribute el "class")))
+      (is (not (.hasAttribute el "attr1")))
+      (is (not (.hasAttribute el "attr2")))
+      (is (= 1 (.-childElementCount el)))
 
-    (let [v (array-seq (.takeRecords o))]
-      (is (= 4 (count v)))
-      (is (= "childList" (.-type (first v))))
-      (is (= "childList" (.-type (second v))))
-      (is (= "attributes" (.-type (nth v 2))))
-      (is (= "attr1" (.-attributeName (nth v 2))))
-      (is (= "attributes" (.-type (nth v 3))))
-      (is (= "class" (.-attributeName (nth v 3)))))
+      (let [v (array-seq (.takeRecords o))]
+        (is (= 4 (count v)))
+        (is (= "childList" (.-type (first v))))
+        (is (= "childList" (.-type (second v))))
+        (is (= "attributes" (.-type (nth v 2))))
+        (is (= "attr1" (.-attributeName (nth v 2))))
+        (is (= "attributes" (.-type (nth v 3))))
+        (is (= "class" (.-attributeName (nth v 3)))))
 
-    (f h3)
+      (f h3)
 
-    (is (= 0 (.-childElementCount el)))
+      (is (= 0 (.-childElementCount el)))
 
-    (let [v (array-seq (.takeRecords o))]
-      (is (= 1 (count v)))
-      (is (= "childList" (.-type (first v)))))
+      (let [v (array-seq (.takeRecords o))]
+        (is (= 1 (count v)))
+        (is (= "childList" (.-type (first v)))))
 
-    (f h4)
+      (f h4)
 
-    (is "div" (.-localName el))
-    (is (= "class2" (.getAttribute el "class")))
-    (is (not (.hasAttribute el "attr1")))
-    (is (= "2" (.getAttribute el "attr2")))
-    (is (= 2 (.-childElementCount el)))
-    (let [c (.-firstChild el)]
-      (is (= "span" (.-localName c))))
-    (let [c (.. el -firstChild -nextElementSibling)]
-      (is (= "div" (.-localName c)))
-      (is (= "content2" (.-textContent c))))
+      (is "div" (.-localName el))
+      (is (= "class2" (.getAttribute el "class")))
+      (is (not (.hasAttribute el "attr1")))
+      (is (= "2" (.getAttribute el "attr2")))
+      (is (= 2 (.-childElementCount el)))
+      (let [c (.-firstChild el)]
+        (is (= "span" (.-localName c))))
+      (let [c (.. el -firstChild -nextElementSibling)]
+        (is (= "div" (.-localName c)))
+        (is (= "content2" (.-textContent c))))
 
-    (let [v (array-seq (.takeRecords o))]
-      (is (= 3 (count v)))
-      (is (= "childList" (.-type (first v))))
-      (is (= "attributes" (.-type (second v))))
-      (is (= "class" (.-attributeName (second v))))
-      (is (= "attributes" (.-type (nth v 2))))
-      (is (= "attr2" (.-attributeName (nth v 2)))))
+      (let [v (array-seq (.takeRecords o))]
+        (is (= 3 (count v)))
+        (is (= "childList" (.-type (first v))))
+        (is (= "attributes" (.-type (second v))))
+        (is (= "class" (.-attributeName (second v))))
+        (is (= "attributes" (.-type (nth v 2))))
+        (is (= "attr2" (.-attributeName (nth v 2)))))
 
-    (.disconnect o)))
+      (.disconnect o))))
+
 
 (defn fire-click-event
   [el]
-  (let [ev (js/Event. "click")]
+  (let [ev (.createEvent js/document "HTMLEvents")]
+    (.initEvent ev "click" true true)
     (.dispatchEvent el ev)))
 
 (deftest update-listener
