@@ -23,21 +23,17 @@
           (.substr s (inc i) (- j i 1))
           (.substr s (inc i)))))))
 
-;; This code replacing only the first class-separator
-#_(defn parse-classes
-  [s]
-  (let [i (.indexOf s class-separator)]
-    (if (pos? i)
-      (.replace (.substr s (inc i)) class-separator " "))))
-
-;; This code replacing all separators
 (defn parse-classes
   [s]
-  (loop [s s]
-    (let [i (.indexOf s class-separator)]
-      (if (pos? i) (recur (.replace (.substr s (inc i)) class-separator " "))
-          s))))  
-  
+  (let [i (.indexOf s class-separator)]
+    (if (pos? i); First locate the class part
+      (let [cs (.substr s (inc i))]
+        (loop [s cs] ; Then convert from 'a.b.c' to 'a b c'
+          (let [i (.indexOf s class-separator)]
+            (if (pos? i)
+              ; Replace with string in a loop is more efficient than replace with global regex
+              (recur (.replace s class-separator " "))
+              s)))))))
 
 (defn literal?
   [o]
