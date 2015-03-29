@@ -18,8 +18,8 @@
 (deftest parse-classes
   (is (= nil (hi/parse-classes "div")))
   (is (= nil (hi/parse-classes "div#id")))
-  (is (= "class1 class2" (hi/parse-classes "div.class1.class2")))
-  (is (= "class1 class2" (hi/parse-classes "div#id.class1.class2"))))
+  (is (= "class1 class2" (hi/parse-classes "div.class1.class2.class3")))
+  (is (= "class1 class2" (hi/parse-classes "div#id.class1.class2.class3"))))
 
 (deftest flattened?
   (is (true? (hi/flattened? nil)))
