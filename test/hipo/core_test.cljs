@@ -197,7 +197,7 @@
           h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
           [el f] (hipo/create-for-update h1)
           o (js/MutationObserver. identity)]
-      (.observe o el #js {:attributes true :childList true :characterData: true :subtree true})
+      (.observe o el #js {:attributes true :childList true :characterData true :subtree true})
 
       (is "div" (.-localName el))
       (is (= 2 (.-childElementCount el)))
