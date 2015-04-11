@@ -5,20 +5,14 @@
             [hipo.hiccup :as hic])
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
-(def +svg-ns+ "http://www.w3.org/2000/svg")
-(def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
-
-(defn- listener-name? [s] (identical? 0 (.indexOf s "on-")))
-(defn- listener-name->event-name [s] (.substring s 3))
-
 (defn set-attribute!
   [el n ov nv]
-  (if (listener-name? n)
+  (if (hic/listener-name? n)
     (do
       (if ov
-        (.removeEventListener el (listener-name->event-name n) ov))
+        (.removeEventListener el (hic/listener-name->event-name n) ov))
       (if nv
-        (.addEventListener el (listener-name->event-name n) nv)))
+        (.addEventListener el (hic/listener-name->event-name n) nv)))
     (condp = n
       "id" (set! (.-id el) nv)
       "class" (set! (.-className el) nv)
@@ -47,8 +41,7 @@
   (let [tag (hic/tag h)
         attrs (hic/attributes h)
         children (hic/children h)
-        element-ns (if (+svg-tags+ tag) +svg-ns+)
-        el (dom/create-element element-ns tag)]
+        el (dom/create-element (hic/tag->ns tag) tag)]
     (doseq [[k v] attrs]
       (if v
         (set-attribute! el (name k) nil v)))

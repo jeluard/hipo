@@ -1,7 +1,8 @@
 (ns hipo.hiccup-test
-  (:require [cemerick.cljs.test :as test]
+  (:require #?(:clj [clojure.test :refer [deftest is]])
+            #?(:cljs [cemerick.cljs.test :as test])
             [hipo.hiccup :as hi])
-  (:require-macros [cemerick.cljs.test :refer [deftest is]]))
+  #?(:cljs (:require-macros [cemerick.cljs.test :refer [deftest is]])))
 
 (deftest parse-tag-name
   (is (= "div" (hi/parse-tag-name "div")))
@@ -35,3 +36,10 @@
   (is (= [[:div] "content"] (hi/flatten-children [[:div] "content"])))
   (is (= [nil "content" nil] (hi/flatten-children [nil "content" nil])))
   (is (= [[:div] [:span]] (hi/flatten-children [[:div] '([:span])]))))
+
+(deftest listener-name
+  (is (true? (hi/listener-name? "on-listener")))
+  (is (false? (hi/listener-name? "listener"))))
+
+(deftest listener-name
+  (is (= "listener" (hi/listener-name->event-name "on-listener"))))

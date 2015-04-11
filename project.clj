@@ -3,10 +3,10 @@
   :url "https://github.com/jeluard/hipo"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.6.0"]]
+  :dependencies [[org.clojure/clojure "1.7.0-beta1"]]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-3165"]
+   {:dependencies [[org.clojure/clojurescript "0.0-3196"]
                    [cljsjs/document-register-element "0.2.1-0"]]
     :plugins [[lein-cljsbuild "1.0.5"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
@@ -17,7 +17,7 @@
                       :optimizations :whitespace
                       :pretty-print true}}}
    :test-commands {"slimerjs" ["phantomjs" :runner "target/unit-test.js"]}}
-  :aliases {"clean-test" ["do" "clean," "cljsbuild" "test"]
+  :aliases {"clean-test" ["do" "clean," "test," "cljsbuild" "test"]
             "clean-install" ["do" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
   :min-lein-version "2.5.0")

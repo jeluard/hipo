@@ -1,22 +1,13 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
             [cljs.analyzer.api :as ana]
+            [hipo.hiccup :as hic]
             [hipo.interceptor :refer [intercept]]))
-
-(def +svg-ns+ "http://www.w3.org/2000/svg")
-(def +svg-tags+ #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
-
-(defn literal?
-  [o]
-  (or (string? o) (number? o) (true? o) (false? o)))
-
-(defn- listener-name? [s] (.startsWith s "on-"))
-(defn- listener-name->event-name [s] (.substring s 3))
 
 (defn compile-set-attribute!
   [el n v]
-  (if (listener-name? n)
-    `(.addEventListener ~el ~(listener-name->event-name n) ~v)
+  (if (hic/listener-name? n)
+    `(.addEventListener ~el ~(hic/listener-name->event-name n) ~v)
     (condp = n
       "id" `(set! (.-id ~el) ~v)
       "class" `(set! (.-className ~el) ~v)
@@ -27,7 +18,7 @@
   [el k v]
   {:pre [(keyword? k)]}
   (let [a (name k)]
-    (if (literal? v)
+    (if (hic/literal? v)
       (if v
         (compile-set-attribute! el a v))
       (let [ve (gensym "v")]
@@ -99,7 +90,7 @@
 
 (defn text-content?
   [data env]
-  (or (literal? data)
+  (or (hic/literal? data)
       (-> data meta :text)
       (text-compliant-hint? data env)))
 
@@ -140,16 +131,16 @@
         [tag class id] (parse-keyword node-key)
         class (compile-class literal-attrs class)
         el (gensym "el")
-        element-ns (if (+svg-tags+ tag) +svg-ns+)]
+        ns (hic/tag->ns tag)]
     (cond
       (and id (or (contains? literal-attrs :id) (contains? literal-attrs "id")))
       `(throw (ex-info "Cannot define id multiple times" {}))
 
       (and (empty? rest) (= (name node-key) tag)) ; simple DOM element e.g. [:div]
-      `(compile-create-element ~element-ns ~tag)
+      `(compile-create-element ~ns ~tag)
 
       :default
-      `(let [~el (compile-create-element ~element-ns ~tag)]
+      `(let [~el (compile-create-element ~ns ~tag)]
          ~@(for [[k v] (merge literal-attrs (if id {:id id}) (if class {:class class}))]
              `(compile-set-attribute!* ~el ~k ~v))
          ~(if var-attrs
