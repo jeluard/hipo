@@ -8,9 +8,8 @@
   [el n v]
   (if (hic/listener-name? n)
     `(.addEventListener ~el ~(hic/listener-name->event-name n) ~v)
-    (condp = n
-      "id" `(set! (.-id ~el) ~v)
-      "class" `(set! (.-className ~el) ~v)
+    (if (= n "id")
+      `(set! (.-id ~el) ~v)
       `(.setAttribute ~el ~n ~v))))
 
 (defmacro compile-set-attribute!*
@@ -115,11 +114,10 @@
   (let [k (gensym "k")
         v (gensym "v")]
     `(doseq [[~k ~v] ~var-attrs]
-       (when ~v
+       (if ~v
          ~(if class
-            `(if (= :class ~k)
-               (set! (.-className ~el) (str ~(str class " ") ~v))
-               (hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))
+            `(let [cs# (if (= :class ~k) (str ~(str class " ") ~v) ~v)]
+               (hipo.interpreter/set-attribute! ~el (name ~k) nil cs#))
             `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))))))
 
 (defmacro compile-create-vector

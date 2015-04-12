@@ -14,9 +14,8 @@
       (if nv
         (.addEventListener el (hic/listener-name->event-name n) nv)))
     (if nv
-      (condp = n
-        "id" (set! (.-id el) nv)
-        "class" (set! (.-className el) nv)
+      (if (= n "id")
+        (set! (.-id el) nv)
         (.setAttribute el n nv))
       (.removeAttribute el n))))
 
