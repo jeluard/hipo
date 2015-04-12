@@ -13,12 +13,12 @@
         (.removeEventListener el (hic/listener-name->event-name n) ov))
       (if nv
         (.addEventListener el (hic/listener-name->event-name n) nv)))
-    (condp = n
-      "id" (set! (.-id el) nv)
-      "class" (set! (.-className el) nv)
-      (if nv
-        (.setAttribute el n nv)
-        (.removeAttribute el n)))))
+    (if nv
+      (condp = n
+        "id" (set! (.-id el) nv)
+        "class" (set! (.-className el) nv)
+        (.setAttribute el n nv))
+      (.removeAttribute el n))))
 
 (declare create-child)
 
