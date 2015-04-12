@@ -16,7 +16,8 @@
            :compiler {:output-to "target/unit-test.js"
                       :optimizations :whitespace
                       :pretty-print true}}}
-   :test-commands {"slimerjs" ["phantomjs" :runner "target/unit-test.js"]}}
+   :test-commands {"slimerjs" ["slimerjs" :runner "target/unit-test.js"]
+                   "phantomjs" ["phantomjs" :runner "target/unit-test.js"]}}
   :aliases {"clean-test" ["do" "clean," "test," "cljsbuild" "test"]
             "clean-install" ["do" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
