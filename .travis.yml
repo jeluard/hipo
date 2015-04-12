@@ -4,7 +4,7 @@ script: lein2 clean-test
 env:
   - SLIMERJSLAUNCHER=$(which firefox) DISPLAY=:99.0 PATH=$TRAVIS_BUILD_DIR/slimerjs:$PATH
 addons:
-  firefox: "37.0"
+  firefox: "36.0"
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - "echo 'Installing Slimer'"
