@@ -94,12 +94,12 @@
     (is (= "label" (.-textContent (.-firstChild e))))))
 
 (deftest boolean-attribute
-  (let [e1 (hipo/create [:option {:selected true} "some text"])
-        e2 (hipo/create [:option {:selected false} "some text"])
-        e3 (hipo/create [:option {:selected nil} "some text"])]
-    (is (= "true" (.getAttribute e1 "selected")))
-    (is (nil? (.getAttribute e2 "selected")))
-    (is (nil? (.getAttribute e3 "selected")))))
+  (let [e1 (hipo/create [:div {:attr true} "some text"])
+        e2 (hipo/create [:div {:attr false} "some text"])
+        e3 (hipo/create [:div {:attr nil} "some text"])]
+    (is (= "true" (.getAttribute e1 "attr")))
+    (is (nil? (.getAttribute e2 "attr")))
+    (is (nil? (.getAttribute e3 "attr")))))
 
 (defn my-div [] [:div {:on-dragend (fn [])}])
 

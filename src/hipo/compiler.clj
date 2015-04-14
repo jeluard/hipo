@@ -1,29 +1,35 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
             [cljs.analyzer.api :as ana]
+            [hipo.element :as el]
             [hipo.hiccup :as hic]
             [hipo.interceptor :refer [intercept]]))
 
 (defn compile-set-attribute!
-  [el n v]
+  [t el n v]
   (if (hic/listener-name? n)
     `(.addEventListener ~el ~(hic/listener-name->event-name n) ~v)
-    (if (= n "id")
-      `(set! (.-id ~el) ~v)
+    (cond
+      ; class can only be as attribute for svg elements
+      (= n "class")
+      `(.setAttribute ~el ~n ~v)
+      (el/input-property? t n)
+      `(aset ~el ~n ~v)
+      :else
       `(.setAttribute ~el ~n ~v))))
 
 (defmacro compile-set-attribute!*
   "compile-time set attribute"
-  [el k v]
+  [t el k v]
   {:pre [(keyword? k)]}
   (let [a (name k)]
     (if (hic/literal? v)
       (if v
-        (compile-set-attribute! el a v))
+        (compile-set-attribute! t el a v))
       (let [ve (gensym "v")]
         `(let [~ve ~v]
            (if ~ve
-             ~(compile-set-attribute! el a ve)))))))
+             ~(compile-set-attribute! t el a ve)))))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
@@ -129,7 +135,7 @@
         [tag class id] (parse-keyword node-key)
         class (compile-class literal-attrs class)
         el (gensym "el")
-        ns (hic/tag->ns tag)]
+        ns (el/tag->ns tag)]
     (cond
       (and id (or (contains? literal-attrs :id) (contains? literal-attrs "id")))
       `(throw (ex-info "Cannot define id multiple times" {}))
@@ -140,7 +146,7 @@
       :default
       `(let [~el (compile-create-element ~ns ~tag)]
          ~@(for [[k v] (merge literal-attrs (if id {:id id}) (if class {:class class}))]
-             `(compile-set-attribute!* ~el ~k ~v))
+             `(compile-set-attribute!* ~tag ~el ~k ~v))
          ~(if var-attrs
             (if id
               `(do

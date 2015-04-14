@@ -1,6 +1,7 @@
 (ns hipo.interpreter
   (:require [clojure.set :as set]
             [hipo.dom :as dom]
+            [hipo.element :as el]
             [hipo.fast :as f]
             [hipo.hiccup :as hic])
   (:require-macros [hipo.interceptor :refer [intercept]]))
@@ -13,11 +14,18 @@
         (.removeEventListener el (hic/listener-name->event-name n) ov))
       (if nv
         (.addEventListener el (hic/listener-name->event-name n) nv)))
-    (if nv
-      (if (= n "id")
-        (set! (.-id el) nv)
-        (.setAttribute el n nv))
-      (.removeAttribute el n))))
+    (if (nil? nv)
+      (if (el/input-property? (.-localName el) n)
+        (aset el n nil)
+        (.removeAttribute el n))
+      (cond
+        ; class can only be as attribute for svg elements
+        (= n "class")
+        (.setAttribute el n nv)
+        (el/input-property? (.-localName el) n)
+        (aset el n nv)
+        :else
+        (.setAttribute el n nv)))))
 
 (declare create-child)
 
@@ -40,7 +48,7 @@
   (let [tag (hic/tag h)
         attrs (hic/attributes h)
         children (hic/children h)
-        el (dom/create-element (hic/tag->ns tag) tag)]
+        el (dom/create-element (el/tag->ns tag) tag)]
     (doseq [[k v] attrs]
       (if v
         (set-attribute! el (name k) nil v)))

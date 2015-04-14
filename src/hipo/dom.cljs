@@ -13,7 +13,6 @@
   {:pre [(element? el) (not (neg? i))]}
   (aget (.-childNodes el) i))
 
-
 (defn children
   ([el] (children el 0))
   ([el i]

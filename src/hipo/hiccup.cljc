@@ -1,15 +1,8 @@
 (ns hipo.hiccup
   (:require [hipo.fast :as f]))
 
-(def ^:private svg-ns "http://www.w3.org/2000/svg")
-(def ^:private svg-tags #{"svg" "g" "rect" "circle" "clipPath" "path" "line" "polygon" "polyline" "text" "textPath"})
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
-
-(defn tag->ns
-  [s]
-  (if (svg-tags s)
-    svg-ns))
 
 (defn parse-tag-name
   [s]

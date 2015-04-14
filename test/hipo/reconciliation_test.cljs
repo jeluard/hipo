@@ -12,6 +12,14 @@
       (is (= (.-title el) "title2"))
       (is (= (.-className el) "")))))
 
+(deftest inputs
+  (let [[el f] (hipo/create-for-update (fn [m] [:input {:checked (:checked? m) :type "checkbox"}]) {:checked? true})]
+    (is (nil? (.getAttribute el "checked")))
+    (is (= (.-checked el) true))
+    (f {:checked? false})
+    (is (nil? (.getAttribute el "checked")))
+    (is (= (.-checked el) false))))
+
 (deftest svg
   (testing "Basic element"
    (let [[el f] (hipo/create-for-update (fn [m] [:svg {:class (:class m)}]) {:class "class1"})]
