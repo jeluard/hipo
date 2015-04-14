@@ -101,6 +101,10 @@
     (is (nil? (.getAttribute e2 "attr")))
     (is (nil? (.getAttribute e3 "attr")))))
 
+(deftest camel-case-attribute
+  (let [el (hipo/create [:input {:defaultValue "default"}])]
+    (is (= "default" (.getAttribute el "defaultValue"git )))))
+
 (defn my-div [] [:div {:on-dragend (fn [])}])
 
 (deftest listener
