@@ -103,7 +103,7 @@
 
 (deftest camel-case-attribute
   (let [el (hipo/create [:input {:defaultValue "default"}])]
-    (is (= "default" (.getAttribute el "defaultValue"git )))))
+    (is (= "default" (.getAttribute el "defaultValue")))))
 
 (defn my-div [] [:div {:on-dragend (fn [])}])
 
