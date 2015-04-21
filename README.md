@@ -4,7 +4,7 @@
 
 A ClojureScript DOM templating library based on [hiccup](https://github.com/weavejester/hiccup) syntax. Supports live DOM node reconciliation (à la [React](http://facebook.github.io/react/)).
 
-Hipo is available in clojars as `[hipo "0.4.0"]`.
+[![Clojars Project](http://clojars.org/hipo/latest-version.svg)](http://clojars.org/hipo).
 
 ## Usage
 
