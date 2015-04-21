@@ -7,7 +7,8 @@
   :profiles
   {:dev
    {:dependencies [[org.clojure/clojurescript "0.0-3196"]
-                   [cljsjs/document-register-element "0.2.1-0"]]
+                   [cljsjs/document-register-element "0.2.1-0"]
+                   [org.clojure/test.check "0.7.0"]]
     :plugins [[lein-cljsbuild "1.0.5"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
   :cljsbuild
