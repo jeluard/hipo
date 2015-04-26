@@ -171,11 +171,12 @@
     :else `(hipo.interpreter/create ~o)))
 
 (defmacro compile-update
-  [el f om]
-  `(let [a# (atom ~om)]
+  [el f oh]
+  `(let [a# (atom ~oh)]
      (fn [no# & [m#]]
-       (let [int# (:interceptor m#)]
+       (let [int# (:interceptor m#)
+             nh# (~f no#)]
          (intercept int# :update {:target ~el}
            (do
-             (hipo.interpreter/update! ~el (~f @a#) (~f no#) int#)
-             (reset! a# no#)))))))
+             (hipo.interpreter/update! ~el @a# nh# int#)
+             (reset! a# nh#)))))))

@@ -24,37 +24,36 @@ Note that the hiccup syntax is extended to handle all properties whose name star
 
 ### Reconciliation
 
-`create-for-update` extends `create` by also returning a function that performs DOM reconciliation based on a new hiccup representation.
-
-`create-for-update` can be called in 2 different ways:
-
-As a 1 arity function: the argument is then expected to be a valid hiccup representation. It then returns a reconciliation function accepting another hiccup vector.
-
-As a 2 arity function: the first argument is then expected to be a function and the second a payload. The hiccup representation is the result of calling the function with the payload as unique argument.
-It then returns a reconciliation function accepting another payload as argument.
-
-This second variant is more convenient as components usually keep their general shape across time.
+`create` has a 2 arity version accepting a function returning an hiccup vector and a payload. It then returns a vector of the DOM element and a reconciliation function accepting another payload as argument.
+Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
+The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to reduce at the minimum DOM changes.
 
 ```clojure
-(let [[el f] (hipo/create-for-update [:div#id.class [:span "1"]])]
+(let [[el f] (hipo/create (fn [m] [:div#id.class [:span (:some-key m)]])
+                          {:some-key "1"})]
   (.appendChild js/document.body el)
-  ; ... time passes
-  (f [:div#id.class [:span "2"]]))
+  ; el is:
+  ; <div id="id" class="class">
+  ;   <span>1</span>
+  ; </div>
 
-; or template style if the element shape stays similar
-
-(let [[el f] (hipo/create-for-update (fn [m] [:div#id.class [:span (:some-key m)]]) {:some-key "1"})]
-  (.appendChild js/document.body el)
   ; ... time passes
-  (f {:some-key "2"}))
+  (f {:some-key "2"})
+
+  ; el i now;
+  ; <div id="id" class="class">
+  ;   <span>2</span>
+  ; </div>
+  )
 ```
 
 Children are assumed to keep their position across reconciliations. If children can be shuffled around while still keeping their identity the `key` metadata must be used.
 
 ```clojure
-(let [[el f] (hipo/create-for-update
-               [:ul (for [i (:children m)]
-                 ^{:key i} [:li {:class i} i])]
+(let [[el f] (hipo/create
+               (fn [m]
+                 [:ul (for [i (:children m)]
+                   ^{:key i} [:li {:class i} i])])
                {:children (range 6)})]
   (.appendChild js/document.body el)
   ; ... time passes
@@ -90,9 +89,10 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
       :move-at (fn [f] (f) (println (:target m) "has been moved"))
       true))
 
-(let [[el f] (hipo/create-for-update
-               [:ul (for [i (:children m)]
-                 ^{:key i} [:li {:class i} i])]
+(let [[el f] (hipo/create
+               (fn [m]
+                 [:ul (for [i (:children m)]
+                   ^{:key i} [:li {:class i} i])])
                {:children (range 6)})]
   (.appendChild js/document.body el)
   ; ... time passes

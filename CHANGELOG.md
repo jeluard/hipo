@@ -1,5 +1,6 @@
-## 0.4.1
+## 0.5.0
 
+* **[~]** Merged `hipo.create-for-update` with `hipo.create`
 * **[~]** Set input properties via property access
 
 ## [0.4.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.4.0)

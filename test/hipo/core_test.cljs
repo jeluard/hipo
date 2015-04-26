@@ -185,32 +185,30 @@
     (is (false? (hipo/partially-compiled? e)))))
 
 (deftest update-simple
-  (let [h1 [:div#id1 "a"]
-        h2 [:div#id2 "b"]
-        [el f] (hipo/create-for-update h1)]
-    (f h2)
+  (let [[el f] (hipo/create (fn [m] [:div {:id (:id m)} (:content m)]) {:id "id1" :content "a"})]
+    (f {:id "id2" :content "b"})
 
     (is (= "b" (.-textContent el)))
     (is (= "id2" (.-id el)))))
 
 (if (exists? js/MutationObserver)
   (deftest update-nested
-    (let [h1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
-          h2 [:div {:attr1 nil :attr2 nil} [:span]]
-          h3 [:div]
-          h4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
-          [el f] (hipo/create-for-update h1)
+    (let [c1 [:div {:class "class1" :attr1 "1"} [:span "content1"] [:span]]
+          c2 [:div {:attr1 nil :attr2 nil} [:span]]
+          c3 [:div]
+          c4 [:div {:class "class2" :attr2 "2"} [:span] [:div "content2"]]
+          [el f] (hipo/create (fn [c] c) c1)
           o (js/MutationObserver. identity)]
       (.observe o el #js {:attributes true :childList true :characterData true :subtree true})
 
       (is "div" (.-localName el))
       (is (= 2 (.-childElementCount el)))
 
-      (f h1)
+      (f c1)
 
       (is (= 0 (count (array-seq (.takeRecords o)))))
 
-      (f h2)
+      (f c2)
 
       (is (not (.hasAttribute el "class")))
       (is (not (.hasAttribute el "attr1")))
@@ -226,7 +224,7 @@
         (is (= "attributes" (.-type (nth v 3))))
         (is (= "class" (.-attributeName (nth v 3)))))
 
-      (f h3)
+      (f c3)
 
       (is (= 0 (.-childElementCount el)))
 
@@ -234,7 +232,7 @@
         (is (= 1 (count v)))
         (is (= "childList" (.-type (first v)))))
 
-      (f h4)
+      (f c4)
 
       (is "div" (.-localName el))
       (is (= "class2" (.getAttribute el "class")))
@@ -266,25 +264,19 @@
 
 (deftest update-listener
   (let [a (atom 0)
-        h1 [:div {:on-click #(swap! a inc)}]
-        h2 [:div]
-        [el f] (hipo/create-for-update h1)]
-
+        [el f] (hipo/create (fn [b] [:div (if b {:on-click #(swap! a inc)})]) true)]
+    (fire-click-event el)
+    (f false)
     (fire-click-event el)
 
-    (f h2)
-
+    (is (= 1 @a))
+    (f true)
     (fire-click-event el)
-
-    (is (= 1 @a))))
+    (is (= 2 @a))))
 
 (deftest update-keyed
-  (let [h1 [:ul (for [i (range 6)]
-                  ^{:key i} [:li i])]
-        h2 [:ul (for [i (reverse (range 6))]
-                  ^{:key i} [:li {:class i} i])]
-        [el f] (hipo/create-for-update h1)]
-    (f h2)
+  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:key i} [:li {:class i} i])]) (range 6))]
+    (f (reverse (range 6)))
 
     (is (= 6 (.. el -childNodes -length)))
     (is (= "5" (.. el -firstChild -textContent)))
@@ -296,12 +288,8 @@
     (is (= "0" (.. el -lastChild -textContent)))))
 
 (deftest update-keyed-sparse
-  (let [h1 [:ul (for [i (range 6)]
-                  ^{:key i} [:li i])]
-        h2 [:ul (for [i (cons 7 (filter odd? (reverse (range 6))))]
-                  ^{:key i} [:li {:class i} i])]
-        [el f] (hipo/create-for-update h1)]
-    (f h2)
+  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:key i} [:li {:class i} i])]) (range 6))]
+    (f (cons 7 (filter odd? (reverse (range 6)))))
 
     (is (= 4 (.. el -childNodes -length)))
     (is (= "7" (.. el -firstChild -textContent)))
@@ -316,7 +304,7 @@
         f (fn [m]
             [:ul (for [i (:children m)]
                    ^{:key i} [:li {:class i} i])])
-        [el uf] (hipo/create-for-update f m1)]
+        [el uf] (hipo/create f m1)]
     (uf m2)
 
     (is (= 4 (.. el -childNodes -length)))
@@ -338,15 +326,15 @@
     b))
 
 (deftest interceptor
-  (let [[el f] (hipo/create-for-update [:div {:class "1"} [:div]])]
-    (f [:div {:class "2"} [:span] [:span]]
+  (let [[el f] (hipo/create (fn [m] [:div {:class (:value m)}]) {:value 1})]
+    (f {:value 2}
        {:interceptor (BooleanInterceptor. false)})
     (is (= "1" (.-className el)))
 
-    (f [:div {:class "3"} [:span] [:span]]
+    (f {:value 3}
        {:interceptor (BooleanInterceptor. true)})
     (is (= "3" (.-className el)))
 
-    (f [:div {:class "4"} [:span] [:span]]
+    (f {:value 4}
        {:interceptor (FunctionInterceptor.)})
     (is (= "3" (.-className el)))))

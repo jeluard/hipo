@@ -96,7 +96,7 @@
       (if nv
         (intercept int :update-attribute {:target el :name n :value nv}
           (set-attribute! el n ov nv))
-        (intercept int :remove-attribute {:target el :name n}
+        (intercept int :remove-attribute {:target el :name n :value ov}
           (set-attribute! el n ov nil)))))
   (doseq [k (set/difference (set (keys om)) (set (keys nm)))
           :let [n (name k) ov (k om)]]
@@ -151,7 +151,7 @@
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
-        (let [h (peek nch)]
+        (if-let [h (nth nch 0)]
           (intercept int :append {:target el :value h}
             (append-child! el h)))
         (let [f (.createDocumentFragment js/document)
@@ -166,8 +166,9 @@
 (defn update-children!
   [el och nch int]
   (if (f/emptyv? nch)
-    (intercept int :clear {:target el}
-      (dom/clear! el))
+    (if-not (f/emptyv? och)
+      (intercept int :clear {:target el}
+        (dom/clear! el)))
     (if (keyed-children? nch)
       (update-keyed-children! el och nch int)
       (update-non-keyed-children! el och nch int))))
@@ -197,14 +198,3 @@
       (intercept int :replace {:target el :value h}
         (dom/replace-text! el h)))
     (update-vector! el ph h int)))
-
-(defn create-for-update
-  [el oh]
-  (let [a (atom oh)]
-    [el
-     (fn [nh & [m]]
-       (let [int (:interceptor m)]
-         (intercept int :update {:target el}
-           (do
-             (hipo.interpreter/update! el @a nh int)
-             (reset! a nh)))))]))
