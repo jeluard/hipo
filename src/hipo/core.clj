@@ -11,8 +11,5 @@
   ([h]
    (if h
      `(hc/compile-create ~h)))
-  ([f oo]
-   `(let [f# ~f
-          oh# (f# ~oo)]
-      (if-let [el# (create oh#)]
-        [el# (hc/compile-reconciliate el# f# oh#)]))))
+  ([f o]
+   `(hc/compile-reconciliate ~f ~o)))

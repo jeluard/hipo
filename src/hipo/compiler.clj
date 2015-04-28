@@ -171,13 +171,15 @@
     :else `(hipo.interpreter/create ~o)))
 
 (defmacro compile-reconciliate
-  [el f oh]
-  `(let [oh# ~oh
+  [f o]
+  `(let [oh# (~f ~o)
          a# (atom oh#)]
-     (fn [no# & [m#]]
-       (let [int# (:interceptor m#)
-             nh# (~f no#)]
-         (intercept int# :reconciliate {:target ~el :old-value oh# :new-value nh#}
-           (do
-             (hipo.interpreter/reconciliate! ~el @a# nh# int#)
-             (reset! a# nh#)))))))
+     (if-let [el# (compile-create oh#)]
+       [el#
+        (fn [no# & [m#]]
+          (let [int# (:interceptor m#)
+                nh# (~f no#)]
+            (intercept int# :reconciliate {:target el# :old-value oh# :new-value nh#}
+              (do
+                (hipo.interpreter/reconciliate! el# @a# nh# int#)
+                (reset! a# nh#)))))])))
