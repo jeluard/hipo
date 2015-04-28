@@ -15,4 +15,4 @@
    `(let [f# ~f
           oh# (f# ~oo)]
       (if-let [el# (create oh#)]
-        [el# (hc/compile-update el# f# oh#)]))))
+        [el# (hc/compile-reconciliate el# f# oh#)]))))

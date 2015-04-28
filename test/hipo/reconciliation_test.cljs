@@ -12,6 +12,14 @@
       (is (= (.-title el) "title2"))
       (is (= (.-className el) "")))))
 
+(deftest nils
+  (let [[el f] (hipo/create (fn [b] [:div (if b [:div "content"])]) true)]
+    (is (= "content" (.-textContent el)))
+    (f false)
+    (is (= "" (.-textContent el)))
+    (f true)
+    (is (= "content" (.-textContent el)))))
+
 (deftest inputs
   (let [[el f] (hipo/create (fn [m] [:input {:checked (:checked? m) :type "checkbox"}]) {:checked? true})]
     (is (nil? (.getAttribute el "checked")))

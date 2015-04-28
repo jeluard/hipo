@@ -49,11 +49,14 @@
   [el n]
   {:pre [(element? el) (not (neg? n))]}
   (dotimes [_ n]
-    (if (exists? (.-remove el))
-      (.remove (.-lastChild el))
-      (.removeChild el (.-lastChild el)))))
+    (.removeChild el (.-lastChild el))))
 
 (defn insert-child-at!
   [el i nel]
   {:pre [(element? el) (not (neg? i)) (element? nel)]}
   (.insertBefore el nel (child-at el i)))
+
+(defn remove-child-at!
+  [el i]
+  {:pre [(element? el) (not (neg? i))]}
+  (.removeChild el (child-at el i)))

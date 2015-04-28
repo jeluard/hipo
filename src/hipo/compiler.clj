@@ -170,14 +170,14 @@
     (vector? o) `(compile-create-vector ~o)
     :else `(hipo.interpreter/create ~o)))
 
-(defmacro compile-update
+(defmacro compile-reconciliate
   [el f oh]
   `(let [oh# ~oh
          a# (atom oh#)]
      (fn [no# & [m#]]
        (let [int# (:interceptor m#)
              nh# (~f no#)]
-         (intercept int# :update {:target ~el :old-value oh# :new-value nh#}
+         (intercept int# :reconciliate {:target ~el :old-value oh# :new-value nh#}
            (do
-             (hipo.interpreter/update! ~el @a# nh# int#)
+             (hipo.interpreter/reconciliate! ~el @a# nh# int#)
              (reset! a# nh#)))))))

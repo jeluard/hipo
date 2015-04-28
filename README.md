@@ -67,7 +67,7 @@ Any DOM changes happening during the reconciliation can be intercepted / prevent
 
 An interceptor must implement the `-intercept` function that receives 2 arguments:
 
-* a keyword type, either `:update`,`:update-children`, `:append`, `:insert-at`, `:move-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
+* a keyword type, either `:reconciliate`,`:reconciliate-children`, `:append`, `:insert-at`, `:move-at`, `:remove-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
 * a map of relevant details
 
 When called this function can return either:

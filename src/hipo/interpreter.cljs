@@ -86,68 +86,76 @@
         f)
       (create-child o))))
 
-; Update
+; Reconciliate
 
-(defn update-attributes!
+(defn reconciliate-attributes!
   [el om nm int]
   (doseq [[nk nv] nm
           :let [ov (nk om) n (name nk)]]
     (if-not (identical? ov nv)
       (if nv
-        (intercept int :update-attribute {:target el :name n :value nv}
+        (intercept int :update-attribute {:target el :name n :old-value ov :new-value nv}
           (set-attribute! el n ov nv))
-        (intercept int :remove-attribute {:target el :name n :value ov}
+        (intercept int :remove-attribute {:target el :name n :old-value ov}
           (set-attribute! el n ov nil)))))
   (doseq [k (set/difference (set (keys om)) (set (keys nm)))
           :let [n (name k) ov (k om)]]
-    (intercept int :remove-attribute {:target el :name n}
+    (intercept int :remove-attribute {:target el :name n :old-value ov}
       (set-attribute! el n ov nil))))
 
-(declare update!)
+(declare reconciliate!)
 
 (defn- child-key [h] (:key (meta h)))
 (defn keyed-children->map [v] (into {} (for [h v] [(child-key h) h])))
 (defn keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (nth ih 1)) ih])))
 
-(defn update-keyed-children!
+(defn reconciliate-keyed-children!
   [el och nch int]
   (let [om (keyed-children->map och)
         nm (keyed-children->indexed-map nch)
         cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
     (doseq [[i [ii h]] nm]
       (if-let [oh (get om i)]
-        ; existing node; if data is identical? move to new location; otherwise detach, update and insert at the right location
+        ; existing node; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
         (intercept int :move-at {:target el :value h :index ii}
           (if (identical? oh h)
             (dom/insert-child-at! el ii (nth cs i))
             (let [ncel (.removeChild el (nth cs i))]
-              (update! ncel oh h int)
-              (dom/insert-child-at! el ii ncel)))); TODO improve perf by relying on (cs ii)? index should be updated based on new insertions
+              (reconciliate! ncel oh h int)
+              (dom/insert-child-at! el ii ncel)))); TODO improve perf by relying on (cs ii)? index should be reconciliated based on new insertions
         ; new node
-        (let [nel (create-child h)]
-          (intercept int :insert-at {:target el :value nel :index ii}
-            (dom/insert-child-at! el ii nel)))))
+        (intercept int :insert-at {:target el :value h :index ii}
+          (dom/insert-child-at! el ii (create-child h)))))
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
-      (intercept int :remove-trailing {:target el :value d}
+      (intercept int :remove-trailing {:target el :count d}
         (dom/remove-trailing-children! el d)))))
 
-(defn update-non-keyed-children!
+(defn reconciliate-non-keyed-children!
   [el och nch int]
   (let [oc (count och)
         nc (count nch)
         d (- oc nc)]
     ; Remove now unused elements if (count och) > (count nch)
     (if (pos? d)
-      (intercept int :remove-trailing {:target el :value d}
+      (intercept int :remove-trailing {:target el :count d}
         (dom/remove-trailing-children! el d)))
     ; Assume children are always in the same order i.e. an element is identified by its position
-    ; Update all existing node
+    ; Reconciliate all existing node
     (dotimes [i (min oc nc)]
       (let [ov (nth och i)
             nv (nth nch i)]
         (if-not (identical? ov nv)
-          (if-let [cel (dom/child-at el i)]
-            (update! cel ov nv int)))))
+          ; Reconciliate value unless previously nil (insert) or newly nil (remove)
+          (cond
+            (nil? ov)
+            (intercept int :insert-at {:target el :value nv :index i}
+              (dom/insert-child-at! el i (create nv)))
+            (nil? nv)
+            (intercept int :remove-at {:target el :index i}
+              (dom/remove-child-at! el i))
+            :else
+            (if-let [cel (dom/child-at el i)]
+              (reconciliate! cel ov nv int))))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
@@ -163,38 +171,38 @@
 
 (defn keyed-children? [v] (not (nil? (child-key (nth v 0)))))
 
-(defn update-children!
+(defn reconciliate-children!
   [el och nch int]
   (if (f/emptyv? nch)
     (if-not (f/emptyv? och)
       (intercept int :clear {:target el}
         (dom/clear! el)))
     (if (keyed-children? nch)
-      (update-keyed-children! el och nch int)
-      (update-non-keyed-children! el och nch int))))
+      (reconciliate-keyed-children! el och nch int)
+      (reconciliate-non-keyed-children! el och nch int))))
 
-(defn update-vector!
+(defn reconciliate-vector!
   [el oh nh int]
   {:pre [(vector? oh) (vector? nh)]}
   (if-not (identical? (hic/tag nh) (hic/tag oh))
     (let [nel (create nh)]
-      (intercept int :replace {:target el :value nel}
+      (intercept int :replace {:target el :value nh}
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
           nm (hic/attributes nh)
           och (hic/children oh)
           nch (hic/children nh)]
       (if-not (identical? och nch)
-        (intercept int :update-children {:target el :old-value och :new-value nch}
-          (update-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
+        (intercept int :reconciliate-children {:target el :old-value och :new-value nch}
+          (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
       (if-not (identical? om nm)
-        (update-attributes! el om nm int)))))
+        (reconciliate-attributes! el om nm int)))))
 
-(defn update!
+(defn reconciliate!
   [el ph h int]
   {:pre [(or (vector? h) (hic/literal? h))]}
   (if (hic/literal? h) ; literal check is much more efficient than vector check
     (if-not (identical? ph h)
       (intercept int :replace {:target el :value h}
         (dom/replace-text! el h)))
-    (update-vector! el ph h int)))
+    (reconciliate-vector! el ph h int)))
