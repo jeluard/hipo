@@ -185,7 +185,7 @@
           och (hic/children oh)
           nch (hic/children nh)]
       (if-not (identical? och nch)
-        (intercept int :update-children {:target el}
+        (intercept int :update-children {:target el :old-value och :new-value nch}
           (update-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
       (if-not (identical? om nm)
         (update-attributes! el om nm int)))))
