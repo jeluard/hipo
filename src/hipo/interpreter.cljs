@@ -151,7 +151,7 @@
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
-        (if-let [h (nth nch 0)]
+        (if-let [h (nth nch oc)]
           (intercept int :append {:target el :value h}
             (append-child! el h)))
         (let [f (.createDocumentFragment js/document)
