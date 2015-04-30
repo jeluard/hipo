@@ -7,6 +7,6 @@
 
 (defn conjs!
   [v s]
-  (if s
-    (recur (conj! v (first s)) (next s))
+  (if (seq s)
+    (recur (conj! v (first s)) (rest s))
     v))
