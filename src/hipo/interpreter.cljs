@@ -16,7 +16,7 @@
         (if nv
           (.addEventListener el (hic/listener-name->event-name n) nv)))
       (if (nil? nv)
-        (if (el/input-property? (.-localName el) n)
+        (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
           (aset el n nil)
           (.removeAttribute el n))
         (cond
