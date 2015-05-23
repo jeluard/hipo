@@ -10,7 +10,7 @@
   [el sok ov nv]
   (let [n (name sok)]
     (if (hic/listener-name? n)
-      (do
+      (when (or (nil? nv) (fn? nv))
         (if ov
           (.removeEventListener el (hic/listener-name->event-name n) ov))
         (if nv
