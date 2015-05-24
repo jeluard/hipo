@@ -7,28 +7,32 @@
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
 (defn set-attribute!
-  [el sok ov nv]
+  [el sok ov nv int]
   (let [n (name sok)]
     (if (hic/listener-name? n)
       (when (or (nil? nv) (fn? nv))
-        (if ov
-          (.removeEventListener el (hic/listener-name->event-name n) ov))
-        (if nv
-          (.addEventListener el (hic/listener-name->event-name n) nv)))
+        (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+          (do
+            (if ov
+              (.removeEventListener el (hic/listener-name->event-name n) ov))
+            (if nv
+              (.addEventListener el (hic/listener-name->event-name n) nv)))))
       (if (nil? nv)
-        (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
-          (aset el n nil)
-          (.removeAttribute el n))
-        (cond
-          ; class can only be as attribute for svg elements
-          (= n "class")
-          (.setAttribute el n nv)
-          (not (hic/literal? nv)) ; Set non-literal via property
-          (aset el n nv)
-          (el/input-property? (.-localName el) n)
-          (aset el n nv)
-          :else
-          (.setAttribute el n nv))))))
+        (intercept int :remove-attribute {:target el :name sok :old-value ov}
+          (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
+            (aset el n nil)
+            (.removeAttribute el n)))
+        (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
+          (cond
+            ; class can only be as attribute for svg elements
+            (= n "class")
+            (.setAttribute el n nv)
+            (not (hic/literal? nv)) ; Set non-literal via property
+            (aset el n nv)
+            (el/input-property? (.-localName el) n)
+            (aset el n nv)
+            :else
+            (.setAttribute el n nv)))))))
 
 (declare create-child)
 
@@ -54,7 +58,7 @@
         el (dom/create-element (el/tag->ns tag) tag)]
     (doseq [[sok v] attrs]
       (if v
-        (set-attribute! el sok nil v)))
+        (set-attribute! el sok nil v nil)))
     (append-children! el children)
     el))
 
@@ -97,14 +101,10 @@
           :let [ov (get om sok)]]
     (if-not (identical? ov nv)
       (if nv
-        (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
-          (set-attribute! el sok ov nv))
-        (intercept int :remove-attribute {:target el :name sok :old-value ov}
-          (set-attribute! el sok ov nil)))))
-  (doseq [sok (set/difference (set (keys om)) (set (keys nm)))
-          :let [ov (get om sok)]]
-    (intercept int :remove-attribute {:target el :name sok :old-value ov}
-      (set-attribute! el sok ov nil))))
+        (set-attribute! el sok ov nv int)
+        (set-attribute! el sok ov nil int))))
+  (doseq [sok (set/difference (set (keys om)) (set (keys nm)))]
+    (set-attribute! el sok (get om sok) nil int)))
 
 (declare reconciliate!)
 
