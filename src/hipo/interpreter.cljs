@@ -7,32 +7,33 @@
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
 (defn set-attribute!
-  [el sok ov nv int]
-  (let [n (name sok)]
-    (if (hic/listener-name? n)
-      (when (or (nil? nv) (fn? nv))
-        (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-          (do
-            (if ov
-              (.removeEventListener el (hic/listener-name->event-name n) ov))
-            (if nv
-              (.addEventListener el (hic/listener-name->event-name n) nv)))))
-      (if (nil? nv)
-        (intercept int :remove-attribute {:target el :name sok :old-value ov}
-          (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
-            (aset el n nil)
-            (.removeAttribute el n)))
-        (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
-          (cond
-            ; class can only be as attribute for svg elements
-            (= n "class")
-            (.setAttribute el n nv)
-            (not (hic/literal? nv)) ; Set non-literal via property
-            (aset el n nv)
-            (el/input-property? (.-localName el) n)
-            (aset el n nv)
-            :else
-            (.setAttribute el n nv)))))))
+  ([el sok ov nv] (set-attribute! el sok ov nv nil))
+  ([el sok ov nv int]
+   (let [n (name sok)]
+     (if (hic/listener-name? n)
+       (when (or (nil? nv) (fn? nv))
+         (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+         (do
+           (if ov
+             (.removeEventListener el (hic/listener-name->event-name n) ov))
+           (if nv
+             (.addEventListener el (hic/listener-name->event-name n) nv)))))
+       (if (nil? nv)
+         (intercept int :remove-attribute {:target el :name sok :old-value ov}
+         (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
+           (aset el n nil)
+           (.removeAttribute el n)))
+         (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
+         (cond
+           ; class can only be as attribute for svg elements
+           (= n "class")
+           (.setAttribute el n nv)
+           (not (hic/literal? nv)) ; Set non-literal via property
+           (aset el n nv)
+           (el/input-property? (.-localName el) n)
+           (aset el n nv)
+           :else
+           (.setAttribute el n nv))))))))
 
 (declare create-child)
 
@@ -58,7 +59,7 @@
         el (dom/create-element (el/tag->ns tag) tag)]
     (doseq [[sok v] attrs]
       (if v
-        (set-attribute! el sok nil v nil)))
+        (set-attribute! el sok nil v)))
     (append-children! el children)
     el))
 
