@@ -20,7 +20,8 @@
              (.addEventListener el (hic/listener-name->event-name n) nv)))))
        (if (nil? nv)
          (intercept int :remove-attribute {:target el :name sok :old-value ov}
-         (if (or (not (hic/literal? nv)) (el/input-property? (.-localName el) n))
+         (if (and (not (= n "class"))
+                  (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
            (aset el n nil)
            (.removeAttribute el n)))
          (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
