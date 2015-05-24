@@ -1,5 +1,6 @@
 (ns hipo.hiccup
-  (:require [hipo.fast :as f]))
+  (:require [clojure.string :as string]
+            [hipo.fast :as f]))
 
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
@@ -108,3 +109,9 @@
   [s]
   {:pre [(listener-name? s)]}
   (subs s 3))
+
+(defn classes
+  [s]
+  (let [s (filter identity s)]
+    (if-not (empty? s)
+      (string/trim (string/join " " s)))))
