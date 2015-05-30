@@ -29,13 +29,14 @@
 
 (defn replace!
   [el nel]
-  {:pre [(element? el) (element? nel)
+  {:pre [(or (text-element? el) (element? el))
+         (or (text-element? nel) (element? nel))
          (not (nil? (.-parentElement el)))]}
   (.replaceChild (.-parentElement el) nel el))
 
 (defn replace-text!
   [el s]
-  [:pre [(element? el) (string? s)]]
+  {:pre [(or (text-element? el) (element? el)) (string? s)]}
   (if (text-element? el)
     (set! (.-textContent el) s)
     (replace! el (.createTextNode js/document s))))

@@ -188,8 +188,8 @@
 
 (defn reconciliate-vector!
   [el oh nh int]
-  {:pre [(vector? oh) (vector? nh)]}
-  (if-not (identical? (hic/tag nh) (hic/tag oh))
+  {:pre [(vector? nh)]}
+  (if (or (hic/literal? oh) (not (identical? (hic/tag nh) (hic/tag oh))))
     (let [nel (create nh)]
       (intercept int :replace {:target el :value nh}
         (dom/replace! el nel)))
@@ -209,5 +209,5 @@
   (if (hic/literal? h) ; literal check is much more efficient than vector check
     (if-not (identical? ph h)
       (intercept int :replace {:target el :value h}
-        (dom/replace-text! el h)))
+        (dom/replace-text! el (str h))))
     (reconciliate-vector! el ph h int)))
