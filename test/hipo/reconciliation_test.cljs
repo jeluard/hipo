@@ -122,13 +122,21 @@
           (is (= "1" (.-textContent c2))))))))
 
 (deftest keyed
-  (let [[el f] (hipo/create (fn [b] (if b [:div ^{:key "a"} [:div 1] ^{:key "b"} [:div 2]]
-                                          [:div ^{:key "b"} [:div 2]])) true)]
-    (is (= 2 (.-childElementCount el)))
-    (is (= "1"  (.. el -firstElementChild -textContent)))
-    (f false)
-    (is (= 1 (.-childElementCount el)))
-    (is (= "2" (.. el -firstElementChild -textContent)))
-    (f true)
-    (is (= 2 (.-childElementCount el)))
-    (is (= "1"  (.. el -firstElementChild -textContent)))))
+  (testing "Keep one element"
+    (let [[el f] (hipo/create (fn [b] (if b [:div ^{:key "a"} [:div 1] ^{:key "b"} [:div 2]]
+                                            [:div ^{:key "b"} [:div 2]])) true)]
+      (is (= 2 (.-childElementCount el)))
+      (is (= "1"  (.. el -firstElementChild -textContent)))
+      (f false)
+      (is (= 1 (.-childElementCount el)))
+      (is (= "2" (.. el -firstElementChild -textContent)))
+      (f true)
+      (is (= 2 (.-childElementCount el)))
+      (is (= "1"  (.. el -firstElementChild -textContent)))))
+  (testing "Change attributes"
+    (let [[el f] (hipo/create (fn [b] [:div ^{:key "1"} {:id (if b "1" "2")}]) true)]
+      (is (= "1"  (.-id el)))
+      (f false)
+      (is (= "2"  (.-id el)))
+      (f true)
+      (is (= "1"  (.-id el))))))

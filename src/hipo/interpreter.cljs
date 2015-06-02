@@ -118,17 +118,23 @@
   [el och nch int]
   (let [om (keyed-children->indexed-map och)
         nm (keyed-children->indexed-map nch)
+        ; TODO reduce set calculation
         cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
     ; Iterate over new elements looking for matching (same key) in old vector
+    ; TODO strategy is not optimale when removing first element. should remove first based on some threshold
     (doseq [[i [ii h]] nm]
       (if-let [[iii oh] (get om i)]
-        ; existing node; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
-        (intercept int :move-at {:target el :value h :index ii}
-          (if (identical? oh h)
-            (dom/insert-child-at! el ii (nth cs iii))
-            (let [ncel (.removeChild el (nth cs iii))]
-              (reconciliate! ncel oh h int)
-              (dom/insert-child-at! el ii ncel))))
+        ; existing node
+        (if (identical? ii iii)
+          ; node kept its position; reconciliate
+          (reconciliate! el oh h int)
+          ; node changed location; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
+          (intercept int :move-at {:target el :value h :index ii}
+            (if (identical? oh h)
+              (dom/insert-child-at! el ii (nth cs iii))
+              (let [ncel (.removeChild el (nth cs iii))]
+                (reconciliate! ncel oh h int)
+                (dom/insert-child-at! el ii ncel)))))
         ; new node; insert it at current index
         (intercept int :insert-at {:target el :value h :index ii}
           (dom/insert-child-at! el ii (create-child h)))))
