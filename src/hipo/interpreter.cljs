@@ -124,17 +124,18 @@
     ; TODO strategy is not optimale when removing first element. should remove first based on some threshold
     (doseq [[i [ii h]] nm]
       (if-let [[iii oh] (get om i)]
-        ; existing node
-        (if (identical? ii iii)
-          ; node kept its position; reconciliate
-          (reconciliate! el oh h int)
-          ; node changed location; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
-          (intercept int :move-at {:target el :value h :index ii}
-            (if (identical? oh h)
-              (dom/insert-child-at! el ii (nth cs iii))
-              (let [ncel (.removeChild el (nth cs iii))]
-                (reconciliate! ncel oh h int)
-                (dom/insert-child-at! el ii ncel)))))
+        (let [cel (nth cs iii)]
+          ; existing node
+          (if (identical? ii iii)
+            ; node kept its position; reconciliate
+            (reconciliate! cel oh h int)
+            ; node changed location; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
+            (intercept int :move-at {:target el :value h :index ii}
+              (if (identical? oh h)
+                (dom/insert-child-at! el ii cel)
+                (let [ncel (.removeChild el cel)]
+                  (reconciliate! ncel oh h int)
+                  (dom/insert-child-at! el ii ncel))))))
         ; new node; insert it at current index
         (intercept int :insert-at {:target el :value h :index ii}
           (dom/insert-child-at! el ii (create-child h)))))
