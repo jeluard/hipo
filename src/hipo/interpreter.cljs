@@ -132,10 +132,11 @@
         ; new node; insert it at current index
         (intercept int :insert-at {:target el :value h :index ii}
           (dom/insert-child-at! el ii (create-child h)))))
-    ; All no useless nodes have been pushed at the end; remove them
+    ; All now useless nodes have been pushed at the end; remove them
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
-      (intercept int :remove-trailing {:target el :count d}
-        (dom/remove-trailing-children! el d)))))
+      (if (pos? d)
+        (intercept int :remove-trailing {:target el :count d}
+          (dom/remove-trailing-children! el d))))))
 
 (defn reconciliate-non-keyed-children!
   [el och nch int]
