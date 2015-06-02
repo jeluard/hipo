@@ -111,26 +111,28 @@
 (declare reconciliate!)
 
 (defn- child-key [h] (:key (meta h)))
-(defn keyed-children->map [v] (into {} (for [h v] [(child-key h) h])))
-(defn keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (nth ih 1)) ih])))
+(defn- keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (nth ih 1)) ih])))
 
 (defn reconciliate-keyed-children!
+  "Reconciliate a vector of children based on their associated key."
   [el och nch int]
-  (let [om (keyed-children->map och)
+  (let [om (keyed-children->indexed-map och)
         nm (keyed-children->indexed-map nch)
         cs (dom/children el (apply max (set/intersection (set (keys nm)) (set (keys om)))))]
+    ; Iterate over new elements looking for matching (same key) in old vector
     (doseq [[i [ii h]] nm]
-      (if-let [oh (get om i)]
+      (if-let [[iii oh] (get om i)]
         ; existing node; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
         (intercept int :move-at {:target el :value h :index ii}
           (if (identical? oh h)
-            (dom/insert-child-at! el ii (nth cs i))
-            (let [ncel (.removeChild el (nth cs i))]
+            (dom/insert-child-at! el ii (nth cs iii))
+            (let [ncel (.removeChild el (nth cs iii))]
               (reconciliate! ncel oh h int)
-              (dom/insert-child-at! el ii ncel)))); TODO improve perf by relying on (cs ii)? index should be reconciliated based on new insertions
-        ; new node
+              (dom/insert-child-at! el ii ncel))))
+        ; new node; insert it at current index
         (intercept int :insert-at {:target el :value h :index ii}
           (dom/insert-child-at! el ii (create-child h)))))
+    ; All no useless nodes have been pushed at the end; remove them
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
       (intercept int :remove-trailing {:target el :count d}
         (dom/remove-trailing-children! el d)))))
