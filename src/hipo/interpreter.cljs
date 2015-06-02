@@ -11,30 +11,30 @@
   ([el sok ov nv int]
    (let [n (name sok)]
      (if (hic/listener-name? n)
-       (when (or (nil? nv) (fn? nv))
+       (if (or (nil? nv) (fn? nv))
          (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-         (do
-           (if ov
-             (.removeEventListener el (hic/listener-name->event-name n) ov))
-           (if nv
-             (.addEventListener el (hic/listener-name->event-name n) nv)))))
+           (do
+             (if ov
+               (.removeEventListener el (hic/listener-name->event-name n) ov))
+             (if nv
+               (.addEventListener el (hic/listener-name->event-name n) nv)))))
        (if (nil? nv)
          (intercept int :remove-attribute {:target el :name sok :old-value ov}
-         (if (and (not (= n "class"))
-                  (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
-           (aset el n nil)
-           (.removeAttribute el n)))
+           (if (and (not (= n "class"))
+                    (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
+             (aset el n nil)
+             (.removeAttribute el n)))
          (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
-         (cond
-           ; class can only be as attribute for svg elements
-           (= n "class")
-           (.setAttribute el n nv)
-           (not (hic/literal? nv)) ; Set non-literal via property
-           (aset el n nv)
-           (el/input-property? (.-localName el) n)
-           (aset el n nv)
-           :else
-           (.setAttribute el n nv))))))))
+           (cond
+             ; class can only be as attribute for svg elements
+             (= n "class")
+             (.setAttribute el n nv)
+             (not (hic/literal? nv)) ; Set non-literal via property
+             (aset el n nv)
+             (el/input-property? (.-localName el) n)
+             (aset el n nv)
+             :else
+             (.setAttribute el n nv))))))))
 
 (declare create-child)
 
