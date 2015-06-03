@@ -9,32 +9,33 @@
 (defn set-attribute!
   ([el sok ov nv] (set-attribute! el sok ov nv nil))
   ([el sok ov nv int]
-   (let [n (name sok)]
-     (if (hic/listener-name? n)
-       (if (or (nil? nv) (fn? nv))
-         (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-           (do
-             (if ov
-               (.removeEventListener el (hic/listener-name->event-name n) ov))
-             (if nv
-               (.addEventListener el (hic/listener-name->event-name n) nv)))))
-       (if (nil? nv)
-         (intercept int :remove-attribute {:target el :name sok :old-value ov}
-           (if (and (not (= n "class"))
-                    (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
-             (aset el n nil)
-             (.removeAttribute el n)))
-         (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
-           (cond
-             ; class can only be as attribute for svg elements
-             (= n "class")
-             (.setAttribute el n nv)
-             (not (hic/literal? nv)) ; Set non-literal via property
-             (aset el n nv)
-             (el/input-property? (.-localName el) n)
-             (aset el n nv)
-             :else
-             (.setAttribute el n nv))))))))
+   (if-not (= ov nv)
+     (let [n (name sok)]
+       (if (hic/listener-name? n)
+         (if (or (nil? nv) (fn? nv))
+           (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+             (do
+               (if ov
+                 (.removeEventListener el (hic/listener-name->event-name n) ov))
+               (if nv
+                 (.addEventListener el (hic/listener-name->event-name n) nv)))))
+         (if (nil? nv)
+           (intercept int :remove-attribute {:target el :name sok :old-value ov}
+             (if (and (not (= n "class"))
+                      (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
+               (aset el n nil)
+               (.removeAttribute el n)))
+           (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
+             (cond
+               ; class can only be as attribute for svg elements
+               (= n "class")
+               (.setAttribute el n nv)
+               (not (hic/literal? nv)) ; Set non-literal via property
+               (aset el n nv)
+               (el/input-property? (.-localName el) n)
+               (aset el n nv)
+               :else
+               (.setAttribute el n nv)))))))))
 
 (declare create-child)
 
@@ -101,10 +102,7 @@
   [el om nm int]
   (doseq [[sok nv] nm
           :let [ov (get om sok)]]
-    (if-not (identical? ov nv)
-      (if nv
-        (set-attribute! el sok ov nv int)
-        (set-attribute! el sok ov nil int))))
+    (set-attribute! el sok ov nv int))
   (doseq [sok (set/difference (set (keys om)) (set (keys nm)))]
     (set-attribute! el sok (get om sok) nil int)))
 
@@ -129,13 +127,11 @@
           (if (identical? ii iii)
             ; node kept its position; reconciliate
             (reconciliate! cel oh h int)
-            ; node changed location; if data is identical? move to new location; otherwise detach, reconciliate and insert at the right location
+            ; node changed location; detach, reconciliate and insert at the right location
             (intercept int :move-at {:target el :value h :index ii}
-              (if (identical? oh h)
-                (dom/insert-child-at! el ii cel)
-                (let [ncel (.removeChild el cel)]
-                  (reconciliate! ncel oh h int)
-                  (dom/insert-child-at! el ii ncel))))))
+              (let [ncel (.removeChild el cel)]
+                (reconciliate! ncel oh h int)
+                (dom/insert-child-at! el ii ncel)))))
         ; new node; insert it at current index
         (intercept int :insert-at {:target el :value h :index ii}
           (dom/insert-child-at! el ii (create-child h)))))
@@ -159,18 +155,17 @@
     (dotimes [i (min oc nc)]
       (let [ov (nth och i)
             nv (nth nch i)]
-        (if-not (identical? ov nv)
-          ; Reconciliate value unless previously nil (insert) or newly nil (remove)
-          (cond
-            (nil? ov)
-            (intercept int :insert-at {:target el :value nv :index i}
-              (dom/insert-child-at! el i (create nv)))
-            (nil? nv)
-            (intercept int :remove-at {:target el :index i}
-              (dom/remove-child-at! el i))
-            :else
-            (if-let [cel (dom/child-at el i)]
-              (reconciliate! cel ov nv int))))))
+        ; Reconciliate value unless previously nil (insert) or newly nil (remove)
+        (cond
+          (nil? ov)
+          (intercept int :insert-at {:target el :value nv :index i}
+            (dom/insert-child-at! el i (create nv)))
+          (nil? nv)
+          (intercept int :remove-at {:target el :index i}
+            (dom/remove-child-at! el i))
+          :else
+          (if-let [cel (dom/child-at el i)]
+            (reconciliate! cel ov nv int)))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
@@ -207,11 +202,9 @@
           nm (hic/attributes nh)
           och (hic/children oh)
           nch (hic/children nh)]
-      (if-not (identical? och nch)
-        (intercept int :reconciliate-children {:target el :old-value och :new-value nch}
-          (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) int)))
-      (if-not (identical? om nm)
-        (reconciliate-attributes! el om nm int)))))
+      (intercept int :reconciliate-children {:target el :old-value och :new-value nch}
+        (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) int))
+      (reconciliate-attributes! el om nm int))))
 
 (defn reconciliate!
   [el ph h int]
