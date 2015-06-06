@@ -54,34 +54,34 @@
   (if (and (seq? form) (symbol? (first form)))
     (name (first form))))
 
-(defmulti compile-append-form (fn [_ f] (form-name f)))
+(defmulti compile-append-form (fn [_ f _] (form-name f)))
 
 (defmethod compile-append-form "for"
-  [el [_ bindings body]]
-  `(doseq ~bindings (compile-append-child ~el ~body)))
+  [el [_ bindings body] m]
+  `(doseq ~bindings (compile-append-child ~el ~body ~m)))
 
 (defmethod compile-append-form "if"
-  [el [_ condition & body]]
+  [el [_ condition & body] m]
   (if (= 1 (count body))
-    `(if ~condition (compile-append-child ~el ~(first body)))
-    `(if ~condition (compile-append-child ~el ~(first body))
-                    (compile-append-child ~el ~(second body)))))
+    `(if ~condition (compile-append-child ~el ~(first body) ~m))
+    `(if ~condition (compile-append-child ~el ~(first body)~m )
+                    (compile-append-child ~el ~(second body) ~m))))
 
 (defmethod compile-append-form "when"
-  [el [_ condition & body]]
+  [el [_ condition & body] m]
   (assert (= 1 (count body)) "Only a single form is supported with when")
-  `(if ~condition (compile-append-child ~el ~(last body))))
+  `(if ~condition (compile-append-child ~el ~(last body) ~m)))
 
 (defmethod compile-append-form "list"
-  [el [_ & body]]
-  `(do ~@(for [o body] `(compile-append-child ~el ~o))))
+  [el [_ & body] m]
+  `(do ~@(for [o body] `(compile-append-child ~el ~o ~m))))
 
 (defmethod compile-append-form :default
-  [el o]
+  [el o m]
   (if o
     `(let [o# ~o]
        (if o#
-         (hipo.interpreter/append-to-parent ~el o#)))))
+         (hipo.interpreter/append-to-parent ~el o# ~m)))))
 
 (defn text-compliant-hint?
   [data env]
@@ -100,11 +100,11 @@
       (text-compliant-hint? data env)))
 
 (defmacro compile-append-child
-  [el data]
+  [el data m]
   (cond
     (text-content? data &env) `(.appendChild ~el (.createTextNode js/document ~data))
-    (vector? data) `(.appendChild ~el (compile-create-vector ~data))
-    :else (compile-append-form el data)))
+    (vector? data) `(.appendChild ~el (compile-create-vector ~data ~m))
+    :else (compile-append-form el data m)))
 
 (defn compile-class
   [literal-attrs class-keyword]
@@ -126,8 +126,18 @@
                (hipo.interpreter/set-attribute! ~el (name ~k) nil cs#))
             `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))))))
 
+(defn compile-children
+  [el children m env]
+  (if (seq children)
+    (if (every? #(text-content? % env) children)
+      (if (= 1 (count children))
+        `[(set! (.-textContent ~el) ~@children)]
+        `[(set! (.-textContent ~el) (str ~@children))])
+      (for [c (filter identity children)]
+        `(compile-append-child ~el ~c ~m)))))
+
 (defmacro compile-create-vector
-  [[node-key & rest]]
+  [[node-key & rest] m]
   (let [literal-attrs (if-let [f (first rest)] (if (map? f) f))
         var-attrs (if (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
@@ -144,43 +154,45 @@
       `(compile-create-element ~ns ~tag)
 
       :default
-      `(let [~el (compile-create-element ~ns ~tag)]
-         ~@(for [[k v] (merge literal-attrs (if id {:id id}) (if class {:class class}))]
-             `(compile-set-attribute!* ~tag ~el ~k ~v))
-         ~(if var-attrs
-            (if id
-              `(do
-                 (if (or (contains? ~var-attrs :id) (contains? ~var-attrs "id"))
-                   (throw (ex-info "Cannot define id multiple times" {}))
-                   (compile-var-attrs ~el ~var-attrs ~class)))
-              `(compile-var-attrs ~el ~var-attrs ~class)))
-         ~@(if (seq children)
-             (if (every? #(text-content? % &env) children)
-               (if (= 1 (count children))
-                 `[(set! (.-textContent ~el) ~@children)]
-                 `[(set! (.-textContent ~el) (str ~@children))])
-               (for [c (filter identity children)]
-                 `(compile-append-child ~el ~c))))
-         ~el))))
+      (if-let [f (:create-element-fn m)]
+        (do
+          (assert (symbol? f) "Value for :create-element-fn ust be a symbol")
+          `(let [~el (~f ~ns ~tag (merge ~@literal-attrs ~@var-attrs ~@(if id `{:id ~id}) ~@(if class `{:class ~class})))]
+             ~@(compile-children el children m &env)
+             ~el))
+        `(let [~el (compile-create-element ~ns ~tag)]
+           ~@(for [[k v] (merge literal-attrs (if id {:id id}) (if class {:class class}))]
+               `(compile-set-attribute!* ~tag ~el ~k ~v))
+           ~@(if var-attrs
+               (if id
+                 `[(do
+                     (if (or (contains? ~var-attrs :id) (contains? ~var-attrs "id"))
+                       (throw (ex-info "Cannot define id multiple times" {}))
+                       (compile-var-attrs ~el ~var-attrs ~class)))]
+                 `[(compile-var-attrs ~el ~var-attrs ~class)]))
+           ~@(compile-children el children m &env)
+           ~el)))))
 
 (defmacro compile-create
-  [o]
+  [o m]
   (cond
     (text-content? o &env) `(.createTextNode js/document ~o)
-    (vector? o) `(compile-create-vector ~o)
-    :else `(hipo.interpreter/create ~o)))
+    (vector? o) `(compile-create-vector ~o ~m)
+    :else `(hipo.interpreter/create ~o ~m)))
 
 (defmacro compile-reconciliate
-  [f o]
+  [f o m]
   `(let [h# (~f ~o)
-         a# (atom h#)]
-     (if-let [el# (compile-create h#)]
+         a# (atom h#)
+         m# ~m]
+     (if-let [el# (compile-create h# m#)]
        [el#
-        (fn [no# & [m#]]
-          (let [int# (:interceptor m#)
+        (fn [no# & [mm#]]
+          (let [m# (merge m# mm#)
+                int# (:interceptor m#)
                 oh# @a#
                 nh# (~f no#)]
             (intercept int# :reconciliate {:target el# :old-value oh# :new-value nh#}
               (do
-                (hipo.interpreter/reconciliate! el# oh# nh# int#)
+                (hipo.interpreter/reconciliate! el# oh# nh# m#)
                 (reset! a# nh#)))))])))

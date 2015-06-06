@@ -5,12 +5,14 @@
     (.createElementNS js/document namespace-uri tag)
     (.createElement js/document tag)))
 
+(defn- node? [o] (instance? js/Node o))
 (defn- element? [el] (if el (identical? 1 (.-nodeType el))))
 (defn- text-element? [el] (if el (identical? 3 (.-nodeType el))))
+(defn- document-fragment? [el] (if el (identical? 11 (.-nodeType el))))
 
 (defn child-at
   [el i]
-  {:pre [(element? el) (not (neg? i))]}
+  {:pre [(or (element? el) (document-fragment? el)) (not (neg? i))]}
   (aget (.-childNodes el) i))
 
 (defn children
@@ -29,8 +31,8 @@
 
 (defn replace!
   [el nel]
-  {:pre [(or (text-element? el) (element? el))
-         (or (text-element? nel) (element? nel))
+  {:pre [(or (text-element? el) (node? el))
+         (or (text-element? nel) (node? nel))
          (not (nil? (.-parentElement el)))]}
   (.replaceChild (.-parentElement el) nel el))
 
@@ -48,16 +50,16 @@
 
 (defn remove-trailing-children!
   [el n]
-  {:pre [(element? el) (not (neg? n))]}
+  {:pre [(node? el) (not (neg? n))]}
   (dotimes [_ n]
     (.removeChild el (.-lastChild el))))
 
 (defn insert-child-at!
   [el i nel]
-  {:pre [(element? el) (not (neg? i)) (element? nel)]}
+  {:pre [(node? el) (not (neg? i)) (element? nel)]}
   (.insertBefore el nel (child-at el i)))
 
 (defn remove-child-at!
   [el i]
-  {:pre [(element? el) (not (neg? i))]}
+  {:pre [(node? el) (not (neg? i))]}
   (.removeChild el (child-at el i)))

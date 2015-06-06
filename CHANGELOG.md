@@ -1,6 +1,7 @@
 ## 0.5.0
 
-* **[~]** Merged `hipo.create-for-update` with `hipo.create`
+* **[+]** Introduced `:create-element-fn` hook
+* **[~]** Renamed `hipo.create` to `hipo.create-static`
 * **[~]** Set input properties via property access
 
 ## [0.4.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.4.0)

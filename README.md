@@ -11,13 +11,13 @@ A ClojureScript DOM templating library based on [hiccup](https://github.com/weav
 
 ### Creation
 
-`create` converts an hiccup vector into a DOM node that can be directly inserted in a document.
+`create-static` converts an hiccup vector into a DOM node that can be directly inserted in a document.
 
 ```clojure
 (ns …
   (:require [hipo.core :as hipo]))
 
-(let [el (hipo/create [:div#id.class {:on-click #(.log js/console "click")} [:span]])]
+(let [el (hipo/create-static [:div#id.class {:on-click #(.log js/console "click")} [:span]])]
   (.appendChild js/document.body el))
 ```
 
@@ -25,9 +25,9 @@ Note that the hiccup syntax is extended to handle all properties whose name star
 
 ### Reconciliation
 
-`create` has a 2 arity version accepting a function returning an hiccup vector and a payload. It then returns a vector of the DOM element and a reconciliation function accepting another payload as argument.
+`create` accepts a function returning an hiccup vector and a payload. It then returns a vector of the DOM element and a reconciliation function accepting another payload as argument.
 Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
-The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to reduce at the minimum DOM changes.
+The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to minimize DOM changes.
 
 ```clojure
 (let [[el f] (hipo/create (fn [m] [:div#id.class [:span (:some-key m)]])
@@ -41,7 +41,7 @@ The reconciliation performs a diff of hiccup structure (DOM is not read) and tri
   ; ... time passes
   (f {:some-key "2"})
 
-  ; el i now;
+  ; el is now;
   ; <div id="id" class="class">
   ;   <span>2</span>
   ; </div>
@@ -67,7 +67,7 @@ Any DOM changes happening during the reconciliation can be intercepted / prevent
 
 An interceptor must implement the `-intercept` function that receives 2 arguments:
 
-* a keyword type, either `:reconciliate`,`:reconciliate-children`, `:append`, `:insert-at`, `:move-at`, `:remove-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
+* a keyword type, either `:reconciliate`, `:append`, `:insert-at`, `:move-at`, `:remove-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
 * a map of relevant details
 
 When called this function can return either:
@@ -109,25 +109,14 @@ Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interce
 
 At compile-time JavaScript code is generated from the hiccup representation to minimize DOM node creation cost at the expense of code size.
 
-The previous hiccup representation would be converted into the following ClojureScript:
+`(create-static [:div.class {:on-click #(.log js/console "click)} [:span])` will be converted into the following ClojureScript:
 
 ```clojure
 (let [el (. js/document createElement "div")]
-  (set! (. el -id) "id")
-  (set! (. el -className) "class")
+  (.setAttribute "class" "class")
   (. el addEventListener "click" #(.log js/console "click"))
   (. el appendChild (. js/document createElement "span"))
   el)
-```
-
-itself compiled into the following JavaScript:
-
-```javascript
-var el = document.createElement("div");
-el.id="id";
-el.className="class";
-el.addEventListener("click", function() {console.log("click")});
-el.appendChild(document.createElement("span"));
 ```
 
 Attributes defined via a function (as opposed to literal maps) must be annotated with `^:attrs`. This allows for simpler generated code as a function in second place can denote either attributes or a child node.
@@ -138,8 +127,6 @@ Attributes defined via a function (as opposed to literal maps) must be annotated
 
 (hipo/create [:div ^:attrs (merge {:class "class"} {:id "id"}) (fn [] [:span])])
 ```
-
-Note that using `^:attrs` increase the size of compiled code, especially when used with inline id/classes (e.g. `[:div#id#class]`) thus is best avoided.
 
 When the hiccup representation can't be fully compiled the remaining hiccup elements are interpreted at runtime. This might happen when functions or parameters are used.
 Once in interpreted mode any nested child will not be compiled even if it is a valid candidate for compilation.
@@ -175,6 +162,22 @@ When you know the result of a function call will be converted to an HTML text no
 
 (hipo/create [:div ^:text (my-fn)])
 ```
+
+## Extensibility
+
+A function can be passed to customize an element creation. This is useful when more efficient ways of creating a component are available.
+
+```clojure
+(ns my-ns)
+
+(defn my-custom-fn
+  [ns tag attrs]
+  ...)
+
+(hipo/create-static [:div ^:text (my-fn)] {:create-element-fn my-ns/my-custom-fn})
+```
+
+As it can be referenced at macro expansion time the function must be provided as a fully qualified symbol.
 
 ## Credits
 

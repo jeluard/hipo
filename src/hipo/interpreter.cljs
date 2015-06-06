@@ -40,29 +40,40 @@
 (declare create-child)
 
 (defn append-child!
-  [el o]
-  (.appendChild el (create-child o)))
+  [el o m]
+  (.appendChild el (create-child o m)))
 
 (defn append-children!
-  [el v]
+  [el v m]
   {:pre [(vector? v)]}
   (loop [v (hic/flatten-children v)]
     (when-not (f/emptyv? v)
       (if-let [h (nth v 0)]
-        (append-child! el h))
+        (append-child! el h m))
       (recur (rest v)))))
 
+(defn default-create-element
+  [ns tag attrs]
+  (let [el (dom/create-element ns tag)]
+    (doseq [[sok v] attrs]
+      (if v
+        (set-attribute! el sok nil v)))
+    el))
+
+(defn create-element
+  [ns tag attrs m]
+  (if-let [f (:create-element-fn m)]
+    (f ns tag attrs)
+    (default-create-element ns tag attrs)))
+
 (defn create-vector
-  [h]
+  [h m]
   {:pre [(vector? h)]}
   (let [tag (hic/tag h)
         attrs (hic/attributes h)
         children (hic/children h)
-        el (dom/create-element (el/tag->ns tag) tag)]
-    (doseq [[sok v] attrs]
-      (if v
-        (set-attribute! el sok nil v)))
-    (append-children! el children)
+        el (create-element (el/tag->ns tag) tag attrs m)]
+    (append-children! el children m)
     el))
 
 (defn mark-as-partially-compiled!
@@ -72,29 +83,29 @@
     (do (aset el "hipo-partially-compiled" true) el)))
 
 (defn create-child
-  [o]
+  [o m]
   {:pre [(or (hic/literal? o) (vector? o))]}
   (if (hic/literal? o) ; literal check is much more efficient than vector check
     (.createTextNode js/document o)
-    (create-vector o)))
+    (create-vector o m)))
 
 (defn append-to-parent
-  [el o]
+  [el o m]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled! el)
   (if (seq? o)
-    (append-children! el (vec o))
-    (append-child! el o)))
+    (append-children! el (vec o) m)
+    (append-child! el o m)))
 
 (defn create
-  [o]
+  [o m]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled!
     (if (seq? o)
       (let [f (.createDocumentFragment js/document)]
-        (append-children! f (vec o))
+        (append-children! f (vec o) m)
         f)
-      (create-child o))))
+      (create-child o m))))
 
 ; Reconciliate
 
@@ -113,7 +124,7 @@
 
 (defn reconciliate-keyed-children!
   "Reconciliate a vector of children based on their associated key."
-  [el och nch int]
+  [el och nch {:keys [interceptor] :as m}]
   (let [om (keyed-children->indexed-map och)
         nm (keyed-children->indexed-map nch)
         ; TODO reduce set calculation
@@ -126,91 +137,93 @@
           ; existing node
           (if (identical? ii iii)
             ; node kept its position; reconciliate
-            (reconciliate! cel oh h int)
+            (reconciliate! cel oh h m)
             ; node changed location; detach, reconciliate and insert at the right location
-            (intercept int :move-at {:target el :value h :index ii}
+            (intercept interceptor :move-at {:target el :value h :index ii}
               (let [ncel (.removeChild el cel)]
-                (reconciliate! ncel oh h int)
+                (reconciliate! ncel oh h m)
                 (dom/insert-child-at! el ii ncel)))))
         ; new node; insert it at current index
-        (intercept int :insert-at {:target el :value h :index ii}
-          (dom/insert-child-at! el ii (create-child h)))))
+        (intercept interceptor :insert-at {:target el :value h :index ii}
+          (dom/insert-child-at! el ii (create-child h m)))))
     ; All now useless nodes have been pushed at the end; remove them
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
       (if (pos? d)
-        (intercept int :remove-trailing {:target el :count d}
+        (intercept interceptor :remove-trailing {:target el :count d}
           (dom/remove-trailing-children! el d))))))
 
 (defn reconciliate-non-keyed-children!
-  [el och nch int]
+  [el och nch {:keys [interceptor] :as m}]
   (let [oc (count och)
         nc (count nch)
         d (- oc nc)]
     ; Remove now unused elements if (count och) > (count nch)
     (if (pos? d)
-      (intercept int :remove-trailing {:target el :count d}
+      (intercept interceptor :remove-trailing {:target el :count d}
         (dom/remove-trailing-children! el d)))
     ; Assume children are always in the same order i.e. an element is identified by its position
     ; Reconciliate all existing node
     (dotimes [i (min oc nc)]
       (let [ov (nth och i)
             nv (nth nch i)]
-        ; Reconciliate value unless previously nil (insert) or newly nil (remove)
-        (cond
-          (nil? ov)
-          (intercept int :insert-at {:target el :value nv :index i}
-            (dom/insert-child-at! el i (create nv)))
-          (nil? nv)
-          (intercept int :remove-at {:target el :index i}
-            (dom/remove-child-at! el i))
-          :else
-          (if-let [cel (dom/child-at el i)]
-            (reconciliate! cel ov nv int)))))
+        (if-not (and (nil? ov) (nil? nv))
+          ; Reconciliate value unless previously nil (insert) or newly nil (remove)
+          (cond
+            (nil? ov)
+            (intercept interceptor :insert-at {:target el :value nv :index i}
+              (dom/insert-child-at! el i (create nv m)))
+            (nil? nv)
+            (intercept interceptor :remove-at {:target el :index i}
+              (dom/remove-child-at! el i))
+            :else
+            (if-let [cel (dom/child-at el i)]
+              (reconciliate! cel ov nv m))))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)
       (if (identical? -1 d)
         (if-let [h (nth nch oc)]
-          (intercept int :append {:target el :value h}
-            (append-child! el h)))
+          (intercept interceptor :append {:target el :value h}
+            (append-child! el h m)))
         (let [f (.createDocumentFragment js/document)
               cs (if (identical? 0 oc) nch (subvec nch oc))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
-          (intercept int :append {:target el :value cs}
-            (append-children! f cs))
+          (intercept interceptor :append {:target el :value cs}
+            (append-children! f cs m))
           (.appendChild el f))))))
 
 (defn keyed-children? [v] (not (nil? (child-key (nth v 0)))))
 
 (defn reconciliate-children!
-  [el och nch int]
+  [el och nch {:keys [interceptor] :as m}]
   (if (f/emptyv? nch)
     (if-not (f/emptyv? och)
-      (intercept int :clear {:target el}
+      (intercept interceptor :clear {:target el}
         (dom/clear! el)))
     (if (keyed-children? nch)
-      (reconciliate-keyed-children! el och nch int)
-      (reconciliate-non-keyed-children! el och nch int))))
+      (reconciliate-keyed-children! el och nch m)
+      (reconciliate-non-keyed-children! el och nch m))))
 
 (defn reconciliate-vector!
-  [el oh nh int]
+  [el oh nh {:keys [interceptor] :as m}]
   {:pre [(vector? nh)]}
   (if (or (hic/literal? oh) (not (identical? (hic/tag nh) (hic/tag oh))))
-    (let [nel (create nh)]
-      (intercept int :replace {:target el :value nh}
+    (let [nel (create nh m)]
+      (intercept interceptor :replace {:target el :value nh}
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
           nm (hic/attributes nh)
           och (hic/children oh)
           nch (hic/children nh)]
-      (intercept int :reconciliate-children {:target el :old-value och :new-value nch}
-        (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) int))
-      (reconciliate-attributes! el om nm int))))
+      (intercept interceptor :reconciliate {:target el :old-value och :new-value nch}
+        (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) m))
+      (reconciliate-attributes! el om nm interceptor))))
 
 (defn reconciliate!
-  [el ph h int]
-  {:pre [(or (vector? h) (hic/literal? h))]}
-  (if (hic/literal? h) ; literal check is much more efficient than vector check
-    (if-not (identical? ph h)
-      (intercept int :replace {:target el :value h}
-        (dom/replace-text! el (str h))))
-    (reconciliate-vector! el ph h int)))
+  [el oh nh {:keys [interceptor] :as m}]
+  {:pre [(or (vector? nh) (hic/literal? nh))
+         (or (nil? m) (map? m))]}
+  (if (hic/literal? nh) ; literal check is much more efficient than vector check
+    (if-not (identical? oh nh)
+      (intercept interceptor :replace {:target el :value nh}
+        (dom/replace-text! el (str nh))))
+    (reconciliate-vector! el oh nh m)))
