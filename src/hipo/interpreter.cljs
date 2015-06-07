@@ -39,17 +39,13 @@
 
 (declare create-child)
 
-(defn append-child!
-  [el o m]
-  (.appendChild el (create-child o m)))
-
 (defn append-children!
   [el v m]
   {:pre [(vector? v)]}
   (loop [v (hic/flatten-children v)]
     (when-not (f/emptyv? v)
       (if-let [h (nth v 0)]
-        (append-child! el h m))
+        (.appendChild el (create-child h m)))
       (recur (rest v)))))
 
 (defn default-create-element
@@ -95,17 +91,13 @@
   (mark-as-partially-compiled! el)
   (if (seq? o)
     (append-children! el (vec o) m)
-    (append-child! el o m)))
+    (.appendChild el (create-child o m))))
 
 (defn create
   [o m]
   {:pre [(not (nil? o))]}
   (mark-as-partially-compiled!
-    (if (seq? o)
-      (let [f (.createDocumentFragment js/document)]
-        (append-children! f (vec o) m)
-        f)
-      (create-child o m))))
+    (create-child o m)))
 
 ; Reconciliate
 
@@ -171,7 +163,7 @@
           (cond
             (nil? ov)
             (intercept interceptor :insert {:target el :value nv :index i}
-              (dom/insert-child! el i (create nv m)))
+              (dom/insert-child! el i (create-child nv m)))
             (nil? nv)
             (intercept interceptor :remove {:target el :index i}
               (dom/remove-child! el i))
@@ -183,7 +175,7 @@
       (if (identical? -1 d)
         (if-let [h (nth nch oc)]
           (intercept interceptor :append {:target el :value h}
-            (append-child! el h m)))
+            (.appendChild el (create-child h m))))
         (let [f (.createDocumentFragment js/document)
               cs (if (identical? 0 oc) nch (subvec nch oc))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
@@ -207,7 +199,7 @@
   [el oh nh {:keys [interceptor] :as m}]
   {:pre [(vector? nh)]}
   (if (or (hic/literal? oh) (not (identical? (hic/tag nh) (hic/tag oh))))
-    (let [nel (create nh m)]
+    (let [nel (create-child nh m)]
       (intercept interceptor :replace {:target el :value nh}
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
