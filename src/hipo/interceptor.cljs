@@ -3,6 +3,12 @@
 (defprotocol Interceptor
   (-intercept [this t m]))
 
+(deftype LogInterceptor [b]
+  Interceptor
+  (-intercept [_ t m]
+    (if (and b (not= :reconciliate t))
+      (.log js/console (name t) " " (clj->js m)))))
+
 (deftype TimeInterceptor [s]
   Interceptor
   (-intercept [_ t _]
