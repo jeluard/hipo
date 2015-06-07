@@ -139,13 +139,13 @@
             ; node kept its position; reconciliate
             (reconciliate! cel oh h m)
             ; node changed location; detach, reconciliate and insert at the right location
-            (intercept interceptor :move-at {:target el :value h :index ii}
+            (intercept interceptor :move {:target el :value h :index ii}
               (let [ncel (.removeChild el cel)]
                 (reconciliate! ncel oh h m)
-                (dom/insert-child-at! el ii ncel)))))
+                (dom/insert-child! el ii ncel)))))
         ; new node; insert it at current index
-        (intercept interceptor :insert-at {:target el :value h :index ii}
-          (dom/insert-child-at! el ii (create-child h m)))))
+        (intercept interceptor :insert {:target el :value h :index ii}
+          (dom/insert-child! el ii (create-child h m)))))
     ; All now useless nodes have been pushed at the end; remove them
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
       (if (pos? d)
@@ -170,13 +170,13 @@
           ; Reconciliate value unless previously nil (insert) or newly nil (remove)
           (cond
             (nil? ov)
-            (intercept interceptor :insert-at {:target el :value nv :index i}
-              (dom/insert-child-at! el i (create nv m)))
+            (intercept interceptor :insert {:target el :value nv :index i}
+              (dom/insert-child! el i (create nv m)))
             (nil? nv)
-            (intercept interceptor :remove-at {:target el :index i}
-              (dom/remove-child-at! el i))
+            (intercept interceptor :remove {:target el :index i}
+              (dom/remove-child! el i))
             :else
-            (if-let [cel (dom/child-at el i)]
+            (if-let [cel (dom/child el i)]
               (reconciliate! cel ov nv m))))))
     ; Create new elements if (count nch) > (count oh)
     (if (neg? d)

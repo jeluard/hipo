@@ -10,7 +10,7 @@
 (defn- text-element? [el] (if el (identical? 3 (.-nodeType el))))
 (defn- document-fragment? [el] (if el (identical? 11 (.-nodeType el))))
 
-(defn child-at
+(defn child
   [el i]
   {:pre [(or (element? el) (document-fragment? el)) (not (neg? i))]}
   (aget (.-childNodes el) i))
@@ -54,12 +54,12 @@
   (dotimes [_ n]
     (.removeChild el (.-lastChild el))))
 
-(defn insert-child-at!
+(defn insert-child!
   [el i nel]
   {:pre [(node? el) (not (neg? i)) (element? nel)]}
-  (.insertBefore el nel (child-at el i)))
+  (.insertBefore el nel (child el i)))
 
-(defn remove-child-at!
+(defn remove-child!
   [el i]
   {:pre [(node? el) (not (neg? i))]}
-  (.removeChild el (child-at el i)))
+  (.removeChild el (child el i)))

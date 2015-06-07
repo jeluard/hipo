@@ -67,7 +67,7 @@ Any DOM changes happening during the reconciliation can be intercepted / prevent
 
 An interceptor must implement the `-intercept` function that receives 2 arguments:
 
-* a keyword type, either `:reconciliate`, `:append`, `:insert-at`, `:move-at`, `:remove-at`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
+* a keyword type, either `:reconciliate`, `:append`, `:insert`, `:move`, `:remove`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
 * a map of relevant details
 
 When called this function can return either:
@@ -87,7 +87,7 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
   (-intercept [_ t m]
     (case t
       :update-attribute false ; cancel all update-attribute
-      :move-at (fn [f] (f) (println (:target m) "has been moved"))
+      :move (fn [f] (f) (println (:target m) "has been moved"))
       true))
 
 (let [[el f] (hipo/create
