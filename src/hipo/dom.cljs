@@ -8,17 +8,16 @@
 (defn- node? [o] (instance? js/Node o))
 (defn- element? [el] (if el (identical? 1 (.-nodeType el))))
 (defn- text-element? [el] (if el (identical? 3 (.-nodeType el))))
-(defn- document-fragment? [el] (if el (identical? 11 (.-nodeType el))))
 
 (defn child
   [el i]
-  {:pre [(or (element? el) (document-fragment? el)) (not (neg? i))]}
+  {:pre [(node? el) (not (neg? i))]}
   (aget (.-childNodes el) i))
 
 (defn children
   ([el] (children el 0))
   ([el i]
-   {:pre [(element? el)
+   {:pre [(node? el)
           (not (neg? i))]}
    (let [fel (.-firstChild el)]
      (if fel
@@ -31,14 +30,13 @@
 
 (defn replace!
   [el nel]
-  {:pre [(or (text-element? el) (node? el))
-         (or (text-element? nel) (node? nel))
+  {:pre [(node? el) (node? nel)
          (not (nil? (.-parentElement el)))]}
   (.replaceChild (.-parentElement el) nel el))
 
 (defn replace-text!
   [el s]
-  {:pre [(or (text-element? el) (element? el)) (string? s)]}
+  {:pre [(node? el) (string? s)]}
   (if (text-element? el)
     (set! (.-textContent el) s)
     (replace! el (.createTextNode js/document s))))
@@ -56,7 +54,7 @@
 
 (defn insert-child!
   [el i nel]
-  {:pre [(node? el) (not (neg? i)) (element? nel)]}
+  {:pre [(node? el) (not (neg? i)) (node? nel)]}
   (.insertBefore el nel (child el i)))
 
 (defn remove-child!
