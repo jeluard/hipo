@@ -69,7 +69,8 @@
         attrs (hic/attributes h)
         children (hic/children h)
         el (create-element (el/tag->ns tag) tag attrs m)]
-    (append-children! el children m)
+    (if children
+      (append-children! el children m))
     el))
 
 (defn mark-as-partially-compiled!

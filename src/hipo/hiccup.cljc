@@ -65,9 +65,9 @@
 
 (defn children
   [v]
-  (if (map? (nth v 1 nil))
-    (subvec v 2)
-    (subvec v 1)))
+  (let [i (if (map? (nth v 1 nil)) 2 1)]
+    (if (> (count v) i)
+      (subvec v i))))
 
 (defn flattened?
   [v]
@@ -85,8 +85,8 @@
 
 (defn flatten-children
   [v]
-  {:pre [(vector? v)]
-   :post [(vector? v)]}
+  {:pre [(or (nil? v) (vector? v))]
+   :post [(or (nil? v) (vector? v))]}
   (if (flattened? v)
     v
     (loop [acc (transient [])
