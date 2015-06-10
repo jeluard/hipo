@@ -6,7 +6,7 @@
 (deftype LogInterceptor [b]
   Interceptor
   (-intercept [_ t m]
-    (if (and b (not= :reconciliate t))
+    (if (or (not b) (not= :reconciliate t))
       (.log js/console (name t) " " (clj->js m)))))
 
 (deftype TimeInterceptor [s]
