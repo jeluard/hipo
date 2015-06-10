@@ -22,6 +22,7 @@ A ClojureScript DOM templating library based on [hiccup](https://github.com/weav
 ```
 
 Note that the hiccup syntax is extended to handle all properties whose name starts with **on-** as event listener registration.
+Listeners can be provided as a function or as a map (`{:name "my-listener" :fn (fn [] (.log js/console 1))}`) in which case they will only be updated if the name is updated.
 
 ### Reconciliation
 
