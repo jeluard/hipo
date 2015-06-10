@@ -193,6 +193,5 @@
                 oh# @a#
                 nh# (~f no#)]
             (intercept int# :reconciliate {:target el# :old-value oh# :new-value nh#}
-              (do
-                (hipo.interpreter/reconciliate! el# oh# nh# m#)
-                (reset! a# nh#)))))])))
+              (hipo.interpreter/reconciliate! el# oh# nh# m#)
+              (reset! a# nh#))))])))

@@ -9,26 +9,26 @@
 (defn set-attribute!
   ([el sok ov nv] (set-attribute! el sok ov nv nil))
   ([el sok ov nv int]
-   (if-not (= ov nv)
-     (let [n (name sok)]
-       (if (hic/listener-name? n)
-         (if (or (nil? nv) (fn? nv))
-           (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-             (do
-               (if ov
-                 (.removeEventListener el (hic/listener-name->event-name n) ov))
-               (if nv
-                 (.addEventListener el (hic/listener-name->event-name n) nv)))))
-         (if (nil? nv)
+   (let [n (name sok)]
+     (if (hic/listener-name? n)
+       (if (or (nil? nv) (fn? nv))
+         (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+           (if ov
+             (.removeEventListener el (hic/listener-name->event-name n) ov))
+           (if nv
+             (.addEventListener el (hic/listener-name->event-name n) nv))))
+       (if (nil? nv)
+         (if ov
            (intercept int :remove-attribute {:target el :name sok :old-value ov}
-             (if (and (not (= n "class"))
-                      (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
-               (aset el n nil)
-               (.removeAttribute el n)))
+              (if (and (not (identical? n "class"))
+                       (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
+                (aset el n nil)
+                (.removeAttribute el n))))
+         (if-not (= ov nv)
            (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
              (cond
                ; class can only be as attribute for svg elements
-               (= n "class")
+               (identical? n "class")
                (.setAttribute el n nv)
                (not (hic/literal? nv)) ; Set non-literal via property
                (aset el n nv)
