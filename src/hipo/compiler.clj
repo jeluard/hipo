@@ -133,7 +133,7 @@
       (if (= 1 (count children))
         `[(set! (.-textContent ~el) ~@children)]
         `[(set! (.-textContent ~el) (str ~@children))])
-      (for [c (filter identity children)]
+      (for [c (keep identity children)]
         `(compile-append-child ~el ~c ~m)))))
 
 (defmacro compile-create-vector

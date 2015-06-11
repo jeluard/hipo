@@ -116,6 +116,6 @@
 
 (defn classes
   [s]
-  (let [s (filter identity s)]
+  (let [s (keep identity s)]
     (if-not (empty? s)
       (string/trim (string/join " " s)))))
