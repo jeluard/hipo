@@ -77,11 +77,14 @@
     (let [c (dec (count v))]
       (loop [i 0]
         (let [o (nth v i)]
-          (if (or (nil? o) (literal? o) (vector? o))
+          (if (or (literal? o) (vector? o))
             (if (= c i)
               true
               (recur (inc i)))
             false))))))
+
+(deftype Sentinel [])
+(def ^:private sentinel (Sentinel.))
 
 (defn flatten-children
   [v]
@@ -91,13 +94,14 @@
     v
     (loop [acc (transient [])
            v v]
-      (let [f (if (= 0 (count v)) nil (nth v 0))]
-        (if (nil? f)
+      (let [f (nth v 0 sentinel)]
+        (if (identical? sentinel f)
           (persistent! acc)
           (recur
-            (if (seq? f)
-              (f/conjs! acc f)
-              (conj! acc f))
+            (cond
+              (seq? f) (f/conjs! acc f)
+              (not (nil? f)) (conj! acc f)
+              :else acc)
             (subvec v 1)))))))
 
 (defn listener-name?

@@ -13,12 +13,12 @@
       (is (= (.-className el) "")))))
 
 (deftest nils
-  (let [[el f] (hipo/create (fn [b] [:div (if b [:div "content"])]) true)]
-    (is (= "content" (.-textContent el)))
+  (let [[el f] (hipo/create (fn [b] [:div (if b [:div "1"]) [:div "2"] (if b [:div "3"])]) true)]
+    (is (= "123" (.-textContent el)))
     (f false)
-    (is (= "" (.-textContent el)))
+    (is (= "2" (.-textContent el)))
     (f true)
-    (is (= "content" (.-textContent el)))))
+    (is (= "123" (.-textContent el)))))
 
 (deftest children-as-text
   (let [[el f] (hipo/create (fn [b] [:div (if b [:div "content"] "")]) true)]
