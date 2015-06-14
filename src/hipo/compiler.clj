@@ -13,7 +13,8 @@
       ; class can only be as attribute for svg elements
       (= n "class")
       `(.setAttribute ~el ~n ~v)
-      (el/input-property? t n)
+      (or (not (hic/literal? v)) ; Set non-literal via property
+          (el/input-property? t n))
       `(aset ~el ~n ~v)
       :else
       `(.setAttribute ~el ~n ~v))))

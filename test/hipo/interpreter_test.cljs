@@ -32,4 +32,7 @@
     (let [el (hi/create [:div.class1.class2] nil)]
       (is (= (.-className el) "class1 class2"))))
   (testing "Redundant id attributes"
-    (is (thrown? js/Error (hi/create [:div#id {:id "id"}] nil)))))
+    (is (thrown? js/Error (hi/create [:div#id {:id "id"}] nil))))
+  (testing "Non literal attributes"
+    (let [el (hi/create [:div {:attr {:key "value"}}] nil)]
+      (is (= nil (.getAttribute el "attr"))))))

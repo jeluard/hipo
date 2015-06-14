@@ -38,4 +38,7 @@
   (testing "Mixed attributes defined as function"
     (let [el (compile-create [:div#id.class1 ^:attrs (assoc nil :class "class2")] nil)]
       (is (= (.-id el) "id"))
-      (is (= (.-className el) "class1 class2")))))
+      (is (= (.-className el) "class1 class2"))))
+  (testing "Non literal attributes"
+    (let [el (compile-create [:div {:attr {:key "value"}}] nil)]
+      (is (= nil (.getAttribute el "attr"))))))
