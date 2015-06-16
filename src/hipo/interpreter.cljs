@@ -6,6 +6,11 @@
             [hipo.hiccup :as hic])
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
+(defn- property-name->js-property-name [n] (.replace n "-" "_"))
+
+(defn set-property-value [el n v] (aset el (property-name->js-property-name n) v))
+(defn set-property-value-runtime [el n v] (if (hic/literal? v) (.setAttribute el n v) (set-property-value el n v)))
+
 (defn set-attribute!
   ([el sok ov nv] (set-attribute! el sok ov nv nil))
   ([el sok ov nv int]
@@ -33,7 +38,7 @@
                  (.setAttribute el n nv)
                  (or (not (hic/literal? nv)) ; Set non-literal via property
                      (el/input-property? (.-localName el) n))
-                 (aset el n nv)
+                 (set-property-value el n nv)
                  :else
                  (.setAttribute el n nv))))))))))
 
@@ -49,18 +54,18 @@
       (recur (rest v)))))
 
 (defn default-create-element
-  [ns tag attrs]
+  [ns tag attrs m]
   (let [el (dom/create-element ns tag)]
     (doseq [[sok v] attrs]
       (if v
-        (set-attribute! el sok nil v)))
+        (set-attribute! el sok nil v (:interceptor m))))
     el))
 
 (defn create-element
   [ns tag attrs m]
   (if-let [f (:create-element-fn m)]
-    (f ns tag attrs)
-    (default-create-element ns tag attrs)))
+    (f ns tag attrs m)
+    (default-create-element ns tag attrs m)))
 
 (defn create-vector
   [h m]

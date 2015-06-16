@@ -15,7 +15,7 @@
       `(.setAttribute ~el ~n ~v)
       (or (not (hic/literal? v)) ; Set non-literal via property
           (el/input-property? t n))
-      `(aset ~el ~n ~v)
+      `(hipo.interpreter/set-property-value-runtime ~el ~n ~v)
       :else
       `(.setAttribute ~el ~n ~v))))
 
