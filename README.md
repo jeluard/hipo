@@ -1,6 +1,6 @@
 # Hipo [![License](http://img.shields.io/badge/license-EPL-blue.svg?style=flat)](https://www.eclipse.org/legal/epl-v10.html) [![Build Status](http://img.shields.io/travis/jeluard/hipo.svg?style=flat)](http://travis-ci.org/#!/jeluard/hipo/builds)
 
-[Usage](#usage) | [Extensibility](#extensibility) | [Performance](#performance)
+[Usage](#usage) | [Extensibility](#extensibility) | [Performance](#performance)  | [Security](#security)
 
 A ClojureScript DOM templating library based on [hiccup](https://github.com/weavejester/hiccup) syntax. Supports live DOM node reconciliation (à la [React](http://facebook.github.io/react/)).
 `hipo` aims to be 100% compatible with `hiccup` syntax.
@@ -104,6 +104,22 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
 
 Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interceptor.cljs) are bundled by default.
 
+## Extensibility
+
+A function can be passed to customize an element creation. This is useful when more efficient ways of creating a component are available.
+
+```clojure
+(ns my-ns)
+
+(defn my-custom-fn
+  [ns tag attrs]
+  ...)
+
+(hipo/create-static [:div ^:text (my-fn)] {:create-element-fn my-ns/my-custom-fn})
+```
+
+As it can be referenced at macro expansion time the function must be provided as a fully qualified symbol.
+
 ## Performance
 
 ### Creation
@@ -166,21 +182,10 @@ When you know the result of a function call will be converted to an HTML text no
 (hipo/create [:div ^:text (my-fn)])
 ```
 
-## Extensibility
+## Security
 
-A function can be passed to customize an element creation. This is useful when more efficient ways of creating a component are available.
-
-```clojure
-(ns my-ns)
-
-(defn my-custom-fn
-  [ns tag attrs]
-  ...)
-
-(hipo/create-static [:div ^:text (my-fn)] {:create-element-fn my-ns/my-custom-fn})
-```
-
-As it can be referenced at macro expansion time the function must be provided as a fully qualified symbol.
+`hipo` creates HTML element only based on the first element of hiccup vectors. No user-provided string will be used to create elements (no usage of `innerHTML` to set content).
+It should be noted that attribute value are not filtered and will be set as-is. Some combination might trigger code evaluation (like `href="javascript:.."`) and should be treated accordingly.
 
 ## Credits
 
