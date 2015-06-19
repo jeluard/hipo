@@ -176,10 +176,12 @@
 
 (defmacro compile-create
   [o m]
-  (cond
-    (text-content? o &env) `(.createTextNode js/document ~o)
-    (vector? o) `(compile-create-vector ~o ~m)
-    :else `(hipo.interpreter/create ~o ~m)))
+  (if (:force-interpretation? m)
+    `(hipo.interpreter/create ~o ~m)
+    (cond
+      (text-content? o &env) `(.createTextNode js/document ~o)
+      (vector? o) `(compile-create-vector ~o ~m)
+      :else `(hipo.interpreter/create ~o ~m))))
 
 (defmacro compile-reconciliate
   [f o m]

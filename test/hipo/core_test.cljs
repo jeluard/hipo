@@ -143,7 +143,7 @@
 
 (deftest partially-compiled
   (is (false? (hipo/partially-compiled? (hipo/create-static [:div]))))
-  (is (true? (hipo/partially-compiled? (hipo/create-static [:div] {:force-interpretation true}))))
+  (is (true? (hipo/partially-compiled? (hipo/create-static [:div] {:force-interpretation? true}))))
   (is (true? (hipo/partially-compiled? (hipo/create-static [:div (conj [] :div)])))))
 
 (deftest compile-form

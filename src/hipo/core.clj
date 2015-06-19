@@ -6,9 +6,7 @@
   "Create a DOM element from hiccup style representation provided as a vector. Second argument is an optional map of options."
   [h & [m]]
   (if h
-    (if (:force-interpretation m)
-      `(hipo.interpreter/create ~h ~m)
-      `(hc/compile-create ~h ~m))))
+    `(hc/compile-create ~h ~m)))
 
 (defmacro create
   "Create a DOM element from hiccup style representation provided as a couple function / initial values. Third argument is an optional map of options that is propagated to the reconciliate function.

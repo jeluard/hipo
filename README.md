@@ -136,7 +136,7 @@ At compile-time JavaScript code is generated from the hiccup representation to m
   el)
 ```
 
-Interpretation can be forced by providing `:force-interpretation true` in the option map.
+Interpretation can be forced by providing `:force-interpretation? true` in the option map.
 
 Attributes defined via a function (as opposed to literal maps) must be annotated with `^:attrs`. This allows for simpler generated code as a function in second place can denote either attributes or a child node.
 
