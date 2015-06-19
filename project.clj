@@ -3,11 +3,11 @@
   :url "https://github.com/jeluard/hipo"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.7.0-beta2"]]
+  :dependencies [[org.clojure/clojure "1.7.0-RC2"]]
   :profiles
   {:dev
-   {:dependencies [[org.clojure/clojurescript "0.0-3211"]
-                   [cljsjs/document-register-element "0.2.1-0"]
+   {:dependencies [[org.clojure/clojurescript "0.0-3308"]
+                   [cljsjs/document-register-element "0.4.3-0"]
                    [org.clojure/test.check "0.7.0"]]
     :plugins [[lein-cljsbuild "1.0.5"]
               [com.cemerick/clojurescript.test "0.3.3"]]}}
