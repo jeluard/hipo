@@ -148,6 +148,9 @@
         el (gensym "el")
         ns (el/tag->ns tag)]
     (cond
+      (not (or (string? node-key) (keyword? node-key)))
+      `(throw (ex-info "Node key must be a string or a keyword" {}))
+
       (and id (or (contains? literal-attrs :id) (contains? literal-attrs "id")))
       `(throw (ex-info "Cannot define id multiple times" {}))
 
