@@ -2,7 +2,6 @@
   (:require [clojure.set :as set]
             [hipo.dom :as dom]
             [hipo.element :as el]
-            [hipo.fast :as f]
             [hipo.hiccup :as hic])
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
@@ -48,7 +47,7 @@
   [el v m]
   {:pre [(vector? v)]}
   (loop [v (hic/flatten-children v)]
-    (when-not (f/emptyv? v)
+    (when-not (empty? v)
       (if-let [h (nth v 0)]
         (.appendChild el (create-child h m)))
       (recur (rest v)))))
@@ -193,8 +192,8 @@
 
 (defn reconciliate-children!
   [el och nch {:keys [interceptor] :as m}]
-  (if (f/emptyv? nch)
-    (if-not (f/emptyv? och)
+  (if (empty? nch)
+    (if-not (empty? och)
       (intercept interceptor :clear {:target el}
         (dom/clear! el)))
     (if (keyed-children? nch)

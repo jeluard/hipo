@@ -1,6 +1,5 @@
 (ns hipo.hiccup
-  (:require [clojure.string :as string]
-            [hipo.fast :as f]))
+  (:require [clojure.string :as string]))
 
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
@@ -72,7 +71,7 @@
 (defn flattened?
   [v]
   {:pre [(or (nil? v) (vector? v))]}
-  (if (f/emptyv? v)
+  (if (empty? v)
     true
     (let [c (dec (count v))]
       (loop [i 0]
@@ -85,6 +84,12 @@
 
 (deftype Sentinel [])
 (def ^:private sentinel (Sentinel.))
+
+(defn conjs!
+  [v s]
+  (if (seq s)
+    (recur (conj! v (first s)) (rest s))
+    v))
 
 (defn flatten-children
   [v]
@@ -99,7 +104,7 @@
           (persistent! acc)
           (recur
             (cond
-              (seq? f) (f/conjs! acc f)
+              (seq? f) (conjs! acc f)
               (not (nil? f)) (conj! acc f)
               :else acc)
             (subvec v 1)))))))
