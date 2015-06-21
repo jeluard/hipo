@@ -88,7 +88,7 @@
 (defn conjs!
   [v s]
   (if (seq s)
-    (recur (conj! v (first s)) (rest s))
+    (recur (let [f (first s)] (if (or (literal? f) (vector? f)) (conj! v f) (conjs! v f))) (rest s))
     v))
 
 (defn flatten-children
