@@ -256,7 +256,6 @@
 
       (.disconnect o))))
 
-
 (defn fire-click-event
   [el]
   (let [ev (.createEvent js/document "HTMLEvents")]
@@ -267,6 +266,20 @@
   (let [a (atom 0)
         [el f] (hipo/create (fn [b] [:div (if b {:on-click #(swap! a inc)})]) true)]
     (fire-click-event el)
+    (f false)
+    (fire-click-event el)
+
+    (is (= 1 @a))
+    (f true)
+    (fire-click-event el)
+    (is (= 2 @a))))
+
+(deftest update-listener-as-map
+  (let [a (atom 0)
+        [el f] (hipo/create (fn [b] [:div {:on-click (if b {:name "click" :fn #(swap! a inc)}
+                                                           {:name "not-click" :fn #()})}]) true)]
+    (fire-click-event el)
+    (is (= 1 @a))
     (f false)
     (fire-click-event el)
 

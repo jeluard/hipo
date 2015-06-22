@@ -44,4 +44,10 @@
       (is (= nil (.getAttribute el "attr")))))
   (testing "Node key must be a string or a keyword"
     (let [n :div]
-      (is (thrown? js/Error (compile-create [n] nil))))))
+      (is (thrown? js/Error (compile-create [n] nil)))))
+  (testing "Attribute starting with on- are listeners"
+    (let [el (compile-create [:div {:on-click #()}] nil)]
+      (is (nil?(.-onclick el)))))
+  (testing "Listeners can be provided as map"
+    (let [el (compile-create [:div {:on-click {:name "click" :fn #()}}] nil)]
+      (is (nil?(.-onclick el))))))

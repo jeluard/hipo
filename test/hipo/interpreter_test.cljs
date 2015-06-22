@@ -35,4 +35,10 @@
     (is (thrown? js/Error (hi/create [:div#id {:id "id"}] nil))))
   (testing "Non literal attributes"
     (let [el (hi/create [:div {:attr {:key "value"}}] nil)]
-      (is (= nil (.getAttribute el "attr"))))))
+      (is (= nil (.getAttribute el "attr")))))
+  (testing "Attribute starting with on- are listeners"
+    (let [el (hi/create [:div {:on-click #()}] nil)]
+      (is (nil?(.-onclick el)))))
+  (testing "Listeners can be provided as map"
+    (let [el (hi/create [:div {:on-click {:name "click" :fn #()}}] nil)]
+      (is (nil?(.-onclick el))))))
