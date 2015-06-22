@@ -276,17 +276,16 @@
 
 (deftest update-listener-as-map
   (let [a (atom 0)
-        [el f] (hipo/create (fn [b] [:div {:on-click (if b {:name "click" :fn #(swap! a inc)}
-                                                           {:name "not-click" :fn #()})}]) true)]
+        [el f] (hipo/create (fn [m] [:div ^:attrs (if m {:on-click {:name "click" :fn #(when-let [f (:fn m)] (swap! a (fn [evt] (f evt))))}})]) {:fn #(inc %)})]
     (fire-click-event el)
     (is (= 1 @a))
-    (f false)
+    (f)
     (fire-click-event el)
 
     (is (= 1 @a))
-    (f true)
+    (f {:fn #(dec %)})
     (fire-click-event el)
-    (is (= 2 @a))))
+    (is (= 0 @a))))
 
 (deftest update-keyed
   (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:key i} [:li {:class i} i])]) (range 6))]

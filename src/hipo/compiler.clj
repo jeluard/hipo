@@ -8,7 +8,10 @@
 (defn compile-set-attribute!
   [t el n v]
   (if (hic/listener-name? n)
-    `(.addEventListener ~el ~(hic/listener-name->event-name n) ~(or (:fn v) v))
+    (let [en (hic/listener-name->event-name n)
+          f (or (:fn v) v)]
+      `(do (.addEventListener ~el ~en ~f)
+           (aset ~el ~(str "hipo_listener_" en) ~f)))
     (cond
       ; class can only be as attribute for svg elements
       (= n "class")

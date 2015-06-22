@@ -19,11 +19,13 @@
          (if-not (and (map? ov) (map? nv)
                       (identical? (:name ov) (:name nv)))
            (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-             (let [en (hic/listener-name->event-name n)]
-               (if-let [ov (or (:fn ov) ov)]
-                 (.removeEventListener el en ov))
-               (if-let [nv (or (:fn nv) nv)]
-                 (.addEventListener el en nv)))))
+             (let [en (hic/listener-name->event-name n)
+                   hn (str "hipo_listener_" en)]
+               (if-let [l (aget el hn)]
+                 (.removeEventListener el en l))
+               (when-let [nv (or (:fn nv) nv)]
+                 (.addEventListener el en nv)
+                 (aset el hn nv)))))
          (if (nil? nv)
            (intercept int :remove-attribute {:target el :name sok :old-value ov}
              (if (and (not (identical? n "class"))
