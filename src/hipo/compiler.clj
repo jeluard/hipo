@@ -189,7 +189,7 @@
 (defmacro compile-reconciliate
   [f o m]
   `(let [h# (~f ~o)
-         a# (atom h#)
+         a# (volatile! h#)
          m# ~m]
      (if-let [el# (compile-create h# m#)]
        [el#
@@ -200,4 +200,4 @@
                 nh# (~f no#)]
             (intercept int# :reconciliate {:target el# :old-value oh# :new-value nh#}
               (hipo.interpreter/reconciliate! el# oh# nh# m#)
-              (reset! a# nh#))))])))
+              (vreset! a# nh#))))])))
