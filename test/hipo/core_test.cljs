@@ -139,7 +139,8 @@
 
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (hipo/create-static [:p]))))
-  (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create-static [:circle])))))
+  (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create-static [:svg/circle]))))
+  (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create-static [:svg/circle] {:force-interpretation? true})))))
 
 (deftest partially-compiled
   (is (false? (hipo/partially-compiled? (hipo/create-static [:div]))))

@@ -43,7 +43,8 @@
         node-tag (second (re-find #"^([^.\#]+)[.\#]?" node-str))
         classes (map #(.substring ^String % 1) (re-seq #"\.[^.*]*" node-str))
         id (first (map #(.substring ^String % 1) (re-seq #"#[^.*]*" node-str)))]
-    [(if (empty? node-tag) "div" node-tag)
+    [(namespace node-key)
+     (if (empty? node-tag) "div" node-tag)
      (if-not (empty? classes) (str/join " " classes))
      id]))
 
@@ -146,13 +147,13 @@
         var-attrs (if (and (not literal-attrs) (-> rest first meta :attrs))
                     (first rest))
         children (if (or literal-attrs var-attrs) (drop 1 rest) rest)
-        [tag class id] (parse-keyword node-key)
+        [nns tag class id] (parse-keyword node-key)
+        ns (hic/key->namespace nns m)
         class (compile-class literal-attrs class)
-        el (gensym "el")
-        ns (el/tag->ns tag)]
+        el (gensym "el")]
     (cond
-      (not (or (string? node-key) (keyword? node-key)))
-      `(throw (ex-info "Node key must be a string or a keyword" {}))
+      (not (keyword? node-key))
+      `(throw (ex-info "Node key must be a keyword" {}))
 
       (and id (or (contains? literal-attrs :id) (contains? literal-attrs "id")))
       `(throw (ex-info "Cannot define id multiple times" {}))

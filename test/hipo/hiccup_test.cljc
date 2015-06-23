@@ -4,6 +4,15 @@
             [hipo.hiccup :as hi])
   #?(:cljs (:require-macros [cemerick.cljs.test :refer [deftest is]])))
 
+(deftest key->namespace
+  (is (= "http://www.w3.org/2000/svg" (hi/key->namespace "svg" {})))
+  (is (= nil (hi/key->namespace nil {})))
+  (is (= "nsdeft " (hi/key->namespace "ns" {:namespaces {"ns" "nsdef"}}))))
+
+(deftest keyns
+  (is (= nil (hi/keyns [:div])))
+  (is (= "svg" (hi/keyns [:svg/circle]))))
+
 (deftest parse-tag-name
   (is (= "div" (hi/parse-tag-name "div")))
   (is (= "div" (hi/parse-tag-name "div#id")))

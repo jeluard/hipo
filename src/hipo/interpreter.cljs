@@ -72,10 +72,11 @@
 (defn create-vector
   [h m]
   {:pre [(vector? h)]}
-  (let [tag (hic/tag h)
+  (let [key (hic/keyns h)
+        tag (hic/tag h)
         attrs (hic/attributes h)
         children (hic/children h)
-        el (create-element (el/tag->ns tag) tag attrs m)]
+        el (create-element (hic/key->namespace key m) tag attrs m)]
     (if children
       (append-children! el children m))
     el))

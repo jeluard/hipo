@@ -4,6 +4,13 @@
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
 
+(def ^:private default-namespaces {"svg" "http://www.w3.org/2000/svg"})
+
+(defn key->namespace
+  [s m]
+  (if s
+    (or (get (:namespaces m) s) (get default-namespaces s))))
+
 (defn parse-tag-name
   [s]
   (let [i (.indexOf s id-separator)]
@@ -41,15 +48,19 @@
 
 (defn node
   [v]
-  (name (nth v 0)))
+  (nth v 0))
+
+(defn keyns
+  [h]
+  (namespace (node h)))
 
 (defn tag
   [v]
-  (parse-tag-name (node v)))
+  (parse-tag-name (name (node v))))
 
 (defn attributes
   [v]
-  (let [n (node v)
+  (let [n (name (node v))
         id (parse-id n)
         cs (parse-classes n)
         m? (nth v 1 nil)]
