@@ -7,6 +7,8 @@ A ClojureScript DOM templating library based on [hiccup](https://github.com/weav
 
 [![Clojars Project](http://clojars.org/hipo/latest-version.svg)](http://clojars.org/hipo).
 
+`hipo` uses `Reader Conditionals`. Make sure your project depends on Clojure 1.7 and a recent ClojureScript version.
+
 ## Usage
 
 ### Creation
