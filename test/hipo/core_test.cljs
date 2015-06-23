@@ -111,10 +111,13 @@
     (is (nil? (.getAttribute e "on-dragend")))))
 
 (defn my-nil [] [:div nil "content" nil])
+(defn my-when [b o] (when b o))
 
 (deftest nil-children
   (let [e (hipo/create-static [:div nil "content" nil])]
     (is (= "content" (.-textContent e))))
+         (let [e (hipo/create-static [:div (my-when false "prefix") "content"])]
+           (is (= "content" (.-textContent e))))
   (let [e (hipo/create-static (my-nil))]
     (is (= "content" (.-textContent e)))))
 

@@ -86,9 +86,7 @@
   (if o
     (if (:force-compilation? m)
       `(throw (ex-info "" {}))
-      `(let [o# ~o]
-         (if o#
-           (hipo.interpreter/append-to-parent ~el o# ~m))))))
+      `(hipo.interpreter/append-to-parent ~el ~o ~m))))
 
 (defn text-compliant-hint?
   [data env]

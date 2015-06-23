@@ -90,15 +90,18 @@
 
 (defn append-to-parent
   [el o m]
-  {:pre [(not (nil? o))]}
-  (if (seq? o)
-    (append-children! el (vec o) m)
-    (.appendChild el (create-child o m))))
+  (cond
+    (seq? o) (append-children! el (vec o) m)
+    (not (nil? o)) (.appendChild el (create-child o m))))
 
 (defn create
   [o m]
-  {:pre [(not (nil? o))]}
-  (create-child o m))
+  (cond
+    (seq? o)
+    (let [f (.createDocumentFragment js/document)]
+      (append-children! f (vec o) m)
+      f)
+    (not (nil? o)) (create-child o m)))
 
 ; Reconciliate
 
