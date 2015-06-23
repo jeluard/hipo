@@ -40,7 +40,7 @@
       (is (= (.-id el) "id"))
       (is (= (.-className el) "class1 class2"))))
   (testing "Non literal attributes"
-    (let [el (compile-create [:div {:attr {:key "value"}}] nil)]
+    (let [el (compile-create [:div {:attr {:hipo/key "value"}}] nil)]
       (is (= nil (.getAttribute el "attr")))))
   (testing "Node key must be a string or a keyword"
     (let [n :div]

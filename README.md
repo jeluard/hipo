@@ -55,7 +55,7 @@ Children are assumed to keep their position across reconciliations. If children 
 (let [[el f] (hipo/create
                (fn [m]
                  [:ul (for [i (:children m)]
-                   ^{:key i} [:li {:class i} i])])
+                   ^{:hipo/key i} [:li {:class i} i])])
                {:children (range 6)})]
   (.appendChild js/document.body el)
   ; ... time passes
@@ -94,7 +94,7 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
 (let [[el f] (hipo/create
                (fn [m]
                  [:ul (for [i (:children m)]
-                   ^{:key i} [:li {:class i} i])])
+                   ^{:hipo/key i} [:li {:class i} i])])
                {:children (range 6)})]
   (.appendChild js/document.body el)
   ; ... time passes

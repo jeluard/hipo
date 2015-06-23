@@ -122,7 +122,7 @@
 
 (declare reconciliate!)
 
-(defn- child-key [h] (:key (meta h)))
+(defn- child-key [h] (:hipo/key (meta h)))
 (defn- keyed-children->indexed-map [v] (into {} (for [ih (map-indexed (fn [idx itm] [idx itm]) v)] [(child-key (nth ih 1)) ih])))
 
 (defn reconciliate-keyed-children!

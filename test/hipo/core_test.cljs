@@ -289,7 +289,7 @@
     (is (= 0 @a))))
 
 (deftest update-keyed
-  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:key i} [:li {:class i} i])]) (range 6))]
+  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:hipo/key i} [:li {:class i} i])]) (range 6))]
     (f (reverse (range 6)))
 
     (is (= 6 (.. el -childNodes -length)))
@@ -302,7 +302,7 @@
     (is (= "0" (.. el -lastChild -textContent)))))
 
 (deftest update-keyed-sparse
-  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:key i} [:li {:class i} i])]) (range 6))]
+  (let [[el f] (hipo/create (fn [r] [:ul (for [i r] ^{:hipo/key i} [:li {:class i} i])]) (range 6))]
     (f (cons 7 (filter odd? (reverse (range 6)))))
 
     (is (= 4 (.. el -childNodes -length)))
@@ -317,7 +317,7 @@
         m2 {:children (cons 7 (filter odd? (reverse (range 6))))}
         f (fn [m]
             [:ul (for [i (:children m)]
-                   ^{:key i} [:li {:class i} i])])
+                   ^{:hipo/key i} [:li {:class i} i])])
         [el uf] (hipo/create f m1)]
     (uf m2)
 

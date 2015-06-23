@@ -44,4 +44,4 @@
   Interceptor
   (-intercept [_ t _]
     (if (= :reconciliate t)
-      (true? (:static (meta (:new-value t)))))))
+      (true? (:hipo/static (meta (:new-value t)))))))

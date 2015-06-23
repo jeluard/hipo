@@ -123,8 +123,8 @@
 
 (deftest keyed
   (testing "Keep one element"
-    (let [[el f] (hipo/create (fn [b] (if b [:div ^{:key "a"} [:div 1] ^{:key "b"} [:div 2]]
-                                            [:div ^{:key "b"} [:div 2]])) true)]
+    (let [[el f] (hipo/create (fn [b] (if b [:div ^{:hipo/key "a"} [:div 1] ^{:hipo/key "b"} [:div 2]]
+                                            [:div ^{:hipo/key "b"} [:div 2]])) true)]
       (is (= 2 (.-childElementCount el)))
       (is (= "1"  (.. el -firstElementChild -textContent)))
       (f false)
@@ -134,7 +134,7 @@
       (is (= 2 (.-childElementCount el)))
       (is (= "1"  (.. el -firstElementChild -textContent)))))
   (testing "Change attributes"
-    (let [[el f] (hipo/create (fn [b] [:div ^{:key "1"} {:id (if b "1" "2")}]) true)]
+    (let [[el f] (hipo/create (fn [b] [:div ^{:hipo/key "1"} {:id (if b "1" "2")}]) true)]
       (is (= "1"  (.-id el)))
       (f false)
       (is (= "2"  (.-id el)))
@@ -142,7 +142,7 @@
       (is (= "1"  (.-id el))))))
 
 (deftest static
-  (let [[el f] (hipo/create (fn [b] (if b [:div [:span]]  [:div ^:static [:div]])) true)]
+  (let [[el f] (hipo/create (fn [b] (if b [:div [:span]]  [:div ^:hipo/static [:div]])) true)]
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))
     (f false {:interceptor (hipo.interceptor.StaticReconciliationInterceptor.)})
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))
