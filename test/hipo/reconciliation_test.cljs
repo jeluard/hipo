@@ -148,3 +148,7 @@
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))
     (f false)
     (is (= "DIV" (.-tagName (.-firstElementChild el))))))
+
+(deftest root-element
+  (let [[_ f] (hipo/create (fn [b] (if b [:div] [:span])) true)]
+    (is (thrown? js/Error (f false)))))

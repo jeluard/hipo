@@ -212,6 +212,7 @@
   (if (or (hic/literal? oh) (not (identical? (hic/tag nh) (hic/tag oh))))
     (let [nel (create-child nh m)]
       (intercept interceptor :replace {:target el :value nh}
+        (assert (.-parentElement el) "Can't replace root element. If you want to change root element's type it must be encapsulated in a static element.")
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
           nm (hic/attributes nh)
@@ -229,5 +230,6 @@
     (if (hic/literal? nh) ; literal check is much more efficient than vector check
       (if-not (identical? oh nh)
         (intercept interceptor :replace {:target el :value nh}
+          (assert (.-parentElement el) "Can't replace root element. If you want to change root element's type it must be encapsulated in a static element.")
           (dom/replace-text! el (str nh))))
       (reconciliate-vector! el oh nh m))))
