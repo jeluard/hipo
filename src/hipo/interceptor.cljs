@@ -42,6 +42,6 @@
 
 (deftype StaticReconciliationInterceptor []
   Interceptor
-  (-intercept [_ t _]
+  (-intercept [_ t o]
     (if (= :reconciliate t)
-      (true? (:hipo/static (meta (:new-value t)))))))
+      (not (contains? (meta (:new-value o)) :hipo/static)))))

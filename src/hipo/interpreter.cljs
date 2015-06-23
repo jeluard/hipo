@@ -30,7 +30,7 @@
            (intercept int :remove-attribute {:target el :name sok :old-value ov}
              (if (and (not (identical? n "class"))
                       (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
-               (aset el n nil)
+               (set-property-value el n nil)
                (.removeAttribute el n)))
            (if-not (and (hic/literal? nv) (= ov nv))
              (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}

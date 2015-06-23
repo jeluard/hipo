@@ -199,9 +199,7 @@
        [el#
         (fn [no# & [mm#]]
           (let [m# (merge m# mm#)
-                int# (:interceptor m#)
                 oh# @a#
                 nh# (~f no#)]
-            (intercept int# :reconciliate {:target el# :old-value oh# :new-value nh#}
-              (hipo.interpreter/reconciliate! el# oh# nh# m#)
-              (vreset! a# nh#))))])))
+            (hipo.interpreter/reconciliate! el# oh# nh# m#)
+            (vreset! a# nh#)))])))
