@@ -110,6 +110,8 @@
 
 ; Reconciliate
 
+(defn- static? [o] (contains? (meta o) :static))
+
 (defn reconciliate-attributes!
   [el om nm int]
   (doseq [[sok nv] nm
@@ -223,8 +225,9 @@
   [el oh nh {:keys [interceptor] :as m}]
   {:pre [(or (vector? nh) (hic/literal? nh))
          (or (nil? m) (map? m))]}
-  (if (hic/literal? nh) ; literal check is much more efficient than vector check
-    (if-not (identical? oh nh)
-      (intercept interceptor :replace {:target el :value nh}
-        (dom/replace-text! el (str nh))))
-    (reconciliate-vector! el oh nh m)))
+  (intercept interceptor :reconciliate {:target el :old-value oh :new-value nh}
+    (if (hic/literal? nh) ; literal check is much more efficient than vector check
+      (if-not (identical? oh nh)
+        (intercept interceptor :replace {:target el :value nh}
+          (dom/replace-text! el (str nh))))
+      (reconciliate-vector! el oh nh m))))

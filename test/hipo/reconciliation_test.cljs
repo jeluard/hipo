@@ -140,3 +140,11 @@
       (is (= "2"  (.-id el)))
       (f true)
       (is (= "1"  (.-id el))))))
+
+(deftest static
+  (let [[el f] (hipo/create (fn [b] (if b [:div [:span]]  [:div ^:static [:div]])) true)]
+    (is (= "SPAN" (.-tagName (.-firstElementChild el))))
+    (f false {:interceptor (hipo.interceptor.StaticReconciliationInterceptor.)})
+    (is (= "SPAN" (.-tagName (.-firstElementChild el))))
+    (f false)
+    (is (= "DIV" (.-tagName (.-firstElementChild el))))))

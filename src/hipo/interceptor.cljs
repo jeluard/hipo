@@ -22,7 +22,7 @@
   Interceptor
   (-intercept [_ t _]
     (fn [f]
-      (if (= t :update)
+      (if (= t :reconciliate)
         (do
           (.profile js/console label)
           (f)
@@ -39,3 +39,9 @@
         (f)
         (.mark js/performance mark-end)
         (.measure js/performance (str label " " t) mark-begin mark-end)))))
+
+(deftype StaticReconciliationInterceptor []
+  Interceptor
+  (-intercept [_ t _]
+    (if (= :reconciliate t)
+      (true? (:static (meta (:new-value t)))))))
