@@ -77,7 +77,6 @@
         e2 (hipo/create-static [:div.class1 spans end])]
     (is (= (.-innerHTML e1) (.-innerHTML e2))))
   (let [e (hipo/create-static (my-div-with-nested-list))]
-    (is (hipo/partially-compiled? e))
     (is (= 4 (.. e -childNodes -length)))
     (is (= "abc" (.-textContent e)))))
 
@@ -85,11 +84,9 @@
 
 (deftest function
   (let [e (hipo/create-static (my-button "label"))]
-    (is (hipo/partially-compiled? e))
     (is (= "BUTTON" (.-tagName e)))
     (is (= "label" (.-textContent e))))
   (let [e (hipo/create-static [:div (my-button "label") (my-button "label")])]
-    (is (hipo/partially-compiled? e))
     (is (= "BUTTON" (.-tagName (.-firstChild e))))
     (is (= "label" (.-textContent (.-firstChild e))))))
 
@@ -109,20 +106,16 @@
 
 (deftest listener
   (let [e (hipo/create-static [:div {:on-drag (fn [])}])]
-    (is (not (hipo/partially-compiled? e)))
     (is (nil? (.getAttribute e "on-drag"))))
   (let [e (hipo/create-static (my-div))]
-    (is (hipo/partially-compiled? e))
     (is (nil? (.getAttribute e "on-dragend")))))
 
 (defn my-nil [] [:div nil "content" nil])
 
 (deftest nil-children
   (let [e (hipo/create-static [:div nil "content" nil])]
-    (is (not (hipo/partially-compiled? e)))
     (is (= "content" (.-textContent e))))
   (let [e (hipo/create-static (my-nil))]
-    (is (hipo/partially-compiled? e))
     (is (= "content" (.-textContent e)))))
 
 (deftest custom-elements
@@ -141,50 +134,6 @@
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (hipo/create-static [:p]))))
   (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create-static [:svg/circle]))))
   (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create-static [:svg/circle] {:force-interpretation? true})))))
-
-(deftest partially-compiled
-  (is (false? (hipo/partially-compiled? (hipo/create-static [:div]))))
-  (is (true? (hipo/partially-compiled? (hipo/create-static [:div] {:force-interpretation? true}))))
-  (is (true? (hipo/partially-compiled? (hipo/create-static [:div (conj [] :div)])))))
-
-(deftest compile-form
-  (let [e (hipo/create-static [:ul (for [i (range 5)] [:li "content" ^:text (str i)])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 5 (.. e -childNodes -length)))
-    (is (= "content0" (.. e -firstChild -textContent))))
-  (let [e (hipo/create-static [:div (if true [:div])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 1 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (if true nil [:div])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 0 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (if false [:div])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 0 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (if false [:div] nil)])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 0 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (when true [:div])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 1 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (when false [:div])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 0 (.. e -childNodes -length))))
-  (let [e (hipo/create-static [:div (list [:div "1"] [:div "2"])])]
-    (is (false? (hipo/partially-compiled? e)))
-    (is (= 2 (.. e -childNodes -length)))))
-
-(def my-str str)
-
-(deftest hints
-  (let [e (hipo/create-static [:div (+ 1 2)])]
-    (is (false? (hipo/partially-compiled? e))))
-  (let [e (hipo/create-static [:div (not true)])]
-    (is (false? (hipo/partially-compiled? e))))
-  (let [e (hipo/create-static [:div (my-str "content")])]
-    (is (true? (hipo/partially-compiled? e))))
-  (let [e (hipo/create-static [:div ^:text (my-str "content")])]
-    (is (false? (hipo/partially-compiled? e)))))
 
 (deftest update-simple
   (let [[el f] (hipo/create (fn [m] [:div {:id (:id m)} (:content m)]) {:id "id1" :content "a"})]

@@ -138,7 +138,7 @@ At compile-time JavaScript code is generated from the hiccup representation to m
   el)
 ```
 
-Interpretation can be forced by providing `:force-interpretation? true` in the option map.
+Interpretation can be forced by providing `:force-interpretation? true` in the option map. Alternatively `:force-compilation? true` will make `create` fail if compilation is not complete.
 
 Attributes defined via a function (as opposed to literal maps) must be annotated with `^:attrs`. This allows for simpler generated code as a function in second place can denote either attributes or a child node.
 
@@ -162,8 +162,6 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
 
 (hipo/create [:div (children)]) ; anything returned by children will be interpreted at runtime
 ```
-
-`partially-compiled?` allows to check if some hiccup vector has been partially compiled or not.
 
 ```clojure
 (ns …

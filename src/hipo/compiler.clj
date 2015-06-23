@@ -84,9 +84,11 @@
 (defmethod compile-append-form :default
   [el o m]
   (if o
-    `(let [o# ~o]
-       (if o#
-         (hipo.interpreter/append-to-parent ~el o# ~m)))))
+    (if (:force-compilation? m)
+      `(throw (ex-info "" {}))
+      `(let [o# ~o]
+         (if o#
+           (hipo.interpreter/append-to-parent ~el o# ~m))))))
 
 (defn text-compliant-hint?
   [data env]
@@ -188,7 +190,7 @@
     (cond
       (text-content? o &env) `(.createTextNode js/document ~o)
       (vector? o) `(compile-create-vector ~o ~m)
-      :else `(hipo.interpreter/create ~o ~m))))
+      :else (if (:force-compilation? m) `(throw (ex-info "Failed to compile" {:value ~o })) `(hipo.interpreter/create ~o ~m)))))
 
 (defmacro compile-reconciliate
   [f o m]

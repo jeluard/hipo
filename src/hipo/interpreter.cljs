@@ -81,12 +81,6 @@
       (append-children! el children m))
     el))
 
-(defn mark-as-partially-compiled!
-  [el]
-  (if-let [pel (.-parentElement el)]
-    (recur pel)
-    (do (aset el "hipo-partially-compiled" true) el)))
-
 (defn create-child
   [o m]
   {:pre [(or (hic/literal? o) (vector? o))]}
@@ -97,7 +91,6 @@
 (defn append-to-parent
   [el o m]
   {:pre [(not (nil? o))]}
-  (mark-as-partially-compiled! el)
   (if (seq? o)
     (append-children! el (vec o) m)
     (.appendChild el (create-child o m))))
@@ -105,8 +98,7 @@
 (defn create
   [o m]
   {:pre [(not (nil? o))]}
-  (mark-as-partially-compiled!
-    (create-child o m)))
+  (create-child o m))
 
 ; Reconciliate
 

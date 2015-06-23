@@ -51,3 +51,31 @@
   (testing "Listeners can be provided as map"
     (let [el (compile-create [:div {:on-click {:name "click" :fn #()}}] nil)]
       (is (nil?(.-onclick el))))))
+
+(deftest compile-form
+  (let [e (compile-create [:ul (for [i (range 5)] [:li "content" ^:text (str i)])] {:force-compilation? true})]
+    (is (= 5 (.. e -childNodes -length)))
+    (is (= "content0" (.. e -firstChild -textContent))))
+  (let [e (compile-create [:div (if true [:div])] {:force-compilation? true})]
+    (is (= 1 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (if true nil [:div])] {:force-compilation? true})]
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (if false [:div])] {:force-compilation? true})]
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (if false [:div] nil)] {:force-compilation? true})]
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (when true [:div])] {:force-compilation? true})]
+    (is (= 1 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (when false [:div])] {:force-compilation? true})]
+    (is (= 0 (.. e -childNodes -length))))
+  (let [e (compile-create [:div (list [:div "1"] [:div "2"])] {:force-compilation? true})]
+    (is (= 2 (.. e -childNodes -length))))
+  (is (thrown? js/Error (compile-create [:div (conj [] :div)] {:force-compilation? true}))))
+
+(def my-str str)
+
+(deftest hints
+  (is (not (nil? (compile-create [:div (+ 1 2)] {:force-compilation? true}))))
+  (is (not (nil? (compile-create [:div (not true)] {:force-compilation? true}))))
+  (is (thrown? js/Error (compile-create [:div (my-str "content")] {:force-compilation? true})))
+  (is (not (nil? (compile-create [:div ^:text (my-str "content")] {:force-compilation? true})))))
