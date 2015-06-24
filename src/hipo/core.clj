@@ -19,6 +19,7 @@
    * interceptors
    "
   [h & [m]]
+  ; Must be a macro or compilation won't be used as compiler does not walk symbol currently
   `(let [h# ~h
          a# (volatile! h#)
          m# ~m]
