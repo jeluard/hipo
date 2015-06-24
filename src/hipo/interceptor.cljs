@@ -45,10 +45,24 @@
       (.mark js/performance mark-end)
       (.measure js/performance (str label " " t) mark-begin mark-end))))
 
+(deftype StateInterceptor [a]
+  Interceptor
+  (-intercept [_ t o f]
+    (swap! a #(cons %2 %1) {:type t :value o})
+    (f)))
+
 (deftype StaticReconciliationInterceptor []
   Interceptor
   (-intercept [_ t o f]
     (if (= :reconciliate t)
       (if-not (contains? (meta (:new-value o)) :hipo/static)
+        (f))
+      (f))))
+
+(deftype IdentityReconciliationInterceptor []
+  Interceptor
+  (-intercept [_ t o f]
+    (if (= :reconciliate t)
+      (if-not (identical? (:old-value o) (:new-value o))
         (f))
       (f))))

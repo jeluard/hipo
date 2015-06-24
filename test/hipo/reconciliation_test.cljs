@@ -152,12 +152,22 @@
       (f (hf true))
       (is (= "1"  (.-id el))))))
 
-(deftest static
+(deftest static-reconciliation
   (let [hf (fn [b] (if b [:div [:span [:div]]]  [:div ^:hipo/static [:div [:div]]]))
         [el f] (hipo/create (hf true))]
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))
     (f (hf false) {:interceptors [(hipo.interceptor.StaticReconciliationInterceptor.)]})
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))))
+
+(deftest identity-reconciliation
+  (let [a (atom nil)
+        h [:div [:div [:div]]]
+        [_ f] (hipo/create h)]
+    (f h {:interceptors [(hipo.interceptor.StateInterceptor. a)]})
+    (is (= 6 (count @a)))
+    (reset! a nil)
+    (f h {:interceptors [(hipo.interceptor.IdentityReconciliationInterceptor.) (hipo.interceptor.StateInterceptor. a)]})
+    (is (zero? (count @a)))))
 
 (deftest root-element
   (let [hf (fn [b] (if b [:div] [:span]))
