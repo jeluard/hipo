@@ -66,17 +66,15 @@ Children are assumed to keep their position across reconciliations. If children 
 
 ### Interceptor
 
-Any DOM changes happening during the reconciliation can be intercepted / prevented via an `Interceptor` implementation.
+Any DOM changes happening during the reconciliation can be intercepted / prevented via an `Interceptor` implementation. Interceptors are defined by providing a vector as `:attribute-handlers` value in the option map.
 
-An interceptor must implement the `-intercept` function that receives 2 arguments:
+An interceptor must implement the `-intercept` function that receives 3 arguments:
 
 * a keyword type, either `:reconciliate`, `:append`, `:insert`, `:move`, `:remove`, `:replace`, `:clear`, `:remove-trailing`, `:update-attribute` or `:remove-attribute`.
 * a map of relevant details
+* a function encapsulating the change execution
 
-When called this function can return either:
-
-* false, then associated DOM manipulation is skipped
-* a function that receives as only argument the function performing this specific DOM reconciliation
+It's the interceptor responsibility to call the provided function at most once to trigger the eventual change execution. If no interceptor skip the call the change is performed.
 
 Beware that preventing some part of the reconciliation might lead to an inconsistent state.
 
@@ -88,10 +86,9 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
 (deftype PrintInterceptor []
   Interceptor
   (-intercept [_ t m]
-    (case t
-      :update-attribute false ; cancel all update-attribute
-      :move (fn [f] (f) (println (:target m) "has been moved"))
-      true))
+    (if (= t :move)
+      (println (:target m) "has been moved"))
+    (f)))
 
 (let [[el f] (hipo/create
                (fn [m]
@@ -101,7 +98,7 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
   (.appendChild js/document.body el)
   ; ... time passes
   (f {:children (reverse (range 6))}
-     {:interceptor (MyInterceptor.)}))
+     {:interceptors [(MyInterceptor.)]}))
 ```
 
 Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interceptor.cljs) are bundled by default.
@@ -110,7 +107,7 @@ Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interce
 
 ### Attribute handling
 
-Element attribute handling can be extending by providing a vector as `:attribute-handlers` value to the option map. Attribute can be targeted by providing a combination of `:ns`, `:tag` and `:attr`.
+Element attribute handling can be extending by providing a vector as `:attribute-handlers` value in the option map. Attribute can be targeted by providing a combination of `:ns`, `:tag` and `:attr`.
 `:type` (`:prop` or `:attr`) defines if this attribute should be manipulated via attribute or property access. Alternatively provide a custom function via `:fn`.
 
 ```clojure

@@ -1,12 +1,9 @@
 (ns hipo.interceptor)
 
 (defmacro intercept
-  [int t m & body]
-  `(let [b# (fn [] ~@body)]
-     (if-not ~int
+  [v t m & body]
+  `(let [b# (fn [] ~@body)
+         v# ~v]
+     (if (or (not v#) (empty? v#))
        (b#)
-       (let [o# (hipo.interceptor/-intercept ~int ~t ~m)]
-         (if-not (false? o#)
-           (if (fn? o#)
-             (o# b#)
-             (b#)))))))
+       (hipo.interceptor/call b# v# ~t ~m))))

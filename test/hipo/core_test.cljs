@@ -280,27 +280,26 @@
     (is (= "3" (.. el -firstChild -nextSibling -nextSibling -textContent)))
     (is (= "1" (.. el -firstChild -nextSibling -nextSibling -nextSibling -textContent)))))
 
-(deftype FunctionInterceptor []
+(deftype MyInterceptor []
   Interceptor
-  (-intercept [_ t _]
+  (-intercept [_ t _ f]
     ; let update be performed but reject all others
-    (fn [f] (if (= :update t) (f)))))
+    (if (= :update t)
+      (f))))
 
-(deftype BooleanInterceptor [b]
+(deftype MyOtherInterceptor []
   Interceptor
-  (-intercept [_ t o]
-    b))
+  (-intercept [_ _ _ f]
+    ; let update be performed but reject all others
+    (f)))
 
 (deftest interceptor
   (let [[el f] (hipo/create (fn [m] [:div {:class (:value m)}]) {:value 1})]
-    (f {:value 2}
-       {:interceptor (BooleanInterceptor. false)})
-    (is (= "1" (.-className el)))
-
-    (f {:value 3}
-       {:interceptor (BooleanInterceptor. true)})
-    (is (= "3" (.-className el)))
-
-    (f {:value 4}
-       {:interceptor (FunctionInterceptor.)})
-    (is (= "3" (.-className el)))))
+    (f {:value 2} {:interceptors [(MyOtherInterceptor.)]})
+    (is (= "2" (.-className el)))
+    (f {:value 3} {:interceptors [(MyInterceptor.)]})
+    (is (= "2" (.-className el)))
+    (f {:value 3} {:interceptors [(MyInterceptor.) (MyOtherInterceptor.)]})
+    (is (= "2" (.-className el)))
+    (f {:value 4} {:interceptors [(MyOtherInterceptor.) (MyInterceptor.)]})
+    (is (= "2" (.-className el)))))

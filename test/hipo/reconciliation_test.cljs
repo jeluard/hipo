@@ -144,7 +144,7 @@
 (deftest static
   (let [[el f] (hipo/create (fn [b] (if b [:div [:span [:div]]]  [:div ^:hipo/static [:div [:div]]])) true)]
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))
-    (f false {:interceptor (hipo.interceptor.StaticReconciliationInterceptor.)})
+    (f false {:interceptors [(hipo.interceptor.StaticReconciliationInterceptor.)]})
     (is (= "SPAN" (.-tagName (.-firstElementChild el))))))
 
 (deftest root-element

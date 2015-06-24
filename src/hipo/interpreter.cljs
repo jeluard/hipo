@@ -6,13 +6,13 @@
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
 (defn set-attribute!
-  [el ns tag sok ov nv {:keys [interceptor] :as m}]
+  [el ns tag sok ov nv {:keys [interceptors] :as m}]
   (if-not (identical? ov nv)
     (let [n (name sok)]
       (if (hic/listener-name? n)
         (if-not (and (map? ov) (map? nv)
                      (identical? (:name ov) (:name nv)))
-          (intercept interceptor (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+          (intercept interceptors (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
             (let [en (hic/listener-name->event-name n)
                   hn (str "hipo_listener_" en)]
               (if-let [l (aget el hn)]
@@ -20,7 +20,7 @@
               (when-let [nv (or (:fn nv) nv)]
                 (.addEventListener el en nv)
                 (aset el hn nv)))))
-        (intercept interceptor (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+        (intercept interceptors (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
           (attr/set-value! el m ns tag n ov nv))))))
 
 (declare create-child)
@@ -101,7 +101,7 @@
 
 (defn reconciliate-keyed-children!
   "Reconciliate a vector of children based on their associated key."
-  [el och nch {:keys [interceptor] :as m}]
+  [el och nch {:keys [interceptors] :as m}]
   (let [om (keyed-children->indexed-map och)
         nm (keyed-children->indexed-map nch)
         ; TODO reduce set calculation
@@ -116,27 +116,27 @@
             ; node kept its position; reconciliate
             (reconciliate! cel oh h m)
             ; node changed location; detach, reconciliate and insert at the right location
-            (intercept interceptor :move {:target el :value h :index ii}
+            (intercept interceptors :move {:target el :value h :index ii}
               (let [ncel (.removeChild el cel)]
                 (reconciliate! ncel oh h m)
                 (dom/insert-child! el ii ncel)))))
         ; new node; insert it at current index
-        (intercept interceptor :insert {:target el :value h :index ii}
+        (intercept interceptors :insert {:target el :value h :index ii}
           (dom/insert-child! el ii (create-child h m)))))
     ; All now useless nodes have been pushed at the end; remove them
     (let [d (count (set/difference (set (keys om)) (set (keys nm))))]
       (if (pos? d)
-        (intercept interceptor :remove-trailing {:target el :count d}
+        (intercept interceptors :remove-trailing {:target el :count d}
           (dom/remove-trailing-children! el d))))))
 
 (defn reconciliate-non-keyed-children!
-  [el och nch {:keys [interceptor] :as m}]
+  [el och nch {:keys [interceptors] :as m}]
   (let [oc (count och)
         nc (count nch)
         d (- oc nc)]
     ; Remove now unused elements if (count och) > (count nch)
     (if (pos? d)
-      (intercept interceptor :remove-trailing {:target el :count d}
+      (intercept interceptors :remove-trailing {:target el :count d}
         (dom/remove-trailing-children! el d)))
     ; Assume children are always in the same order i.e. an element is identified by its position
     ; Reconciliate all existing node
@@ -147,10 +147,10 @@
           ; Reconciliate value unless previously nil (insert) or newly nil (remove)
           (cond
             (nil? ov)
-            (intercept interceptor :insert {:target el :value nv :index i}
+            (intercept interceptors :insert {:target el :value nv :index i}
               (dom/insert-child! el i (create-child nv m)))
             (nil? nv)
-            (intercept interceptor :remove {:target el :index i}
+            (intercept interceptors :remove {:target el :index i}
               (dom/remove-child! el i))
             :else
             (if-let [cel (dom/child el i)]
@@ -159,51 +159,51 @@
     (if (neg? d)
       (if (identical? -1 d)
         (if-let [h (nth nch oc)]
-          (intercept interceptor :append {:target el :value h}
+          (intercept interceptors :append {:target el :value h}
             (.appendChild el (create-child h m))))
         (let [f (.createDocumentFragment js/document)
               cs (if (identical? 0 oc) nch (subvec nch oc))]
           ; An intermediary DocumentFragment is used to reduce the number of append to the attached node
-          (intercept interceptor :append {:target el :value cs}
+          (intercept interceptors :append {:target el :value cs}
             (append-children! f cs m))
           (.appendChild el f))))))
 
 (defn keyed-children? [v] (not (nil? (child-key (nth v 0)))))
 
 (defn reconciliate-children!
-  [el och nch {:keys [interceptor] :as m}]
+  [el och nch {:keys [interceptors] :as m}]
   (if (empty? nch)
     (if-not (empty? och)
-      (intercept interceptor :clear {:target el}
+      (intercept interceptors :clear {:target el}
         (dom/clear! el)))
     (if (keyed-children? nch)
       (reconciliate-keyed-children! el och nch m)
       (reconciliate-non-keyed-children! el och nch m))))
 
 (defn reconciliate-vector!
-  [el oh nh {:keys [interceptor] :as m}]
+  [el oh nh {:keys [interceptors] :as m}]
   {:pre [(vector? nh)]}
   (if (or (hic/literal? oh) (not (identical? (hic/tag nh) (hic/tag oh))))
     (let [nel (create-child nh m)]
-      (intercept interceptor :replace {:target el :value nh}
+      (intercept interceptors :replace {:target el :value nh}
         (assert (.-parentElement el) "Can't replace root element. If you want to change root element's type it must be encapsulated in a static element.")
         (dom/replace! el nel)))
     (let [om (hic/attributes oh)
           nm (hic/attributes nh)
           och (hic/children oh)
           nch (hic/children nh)]
-      (intercept interceptor :reconciliate {:target el :old-value och :new-value nch}
+      (intercept interceptors :reconciliate {:target el :old-value och :new-value nch}
         (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) m))
       (reconciliate-attributes! el (hic/keyns nh) (hic/tag nh) om nm m))))
 
 (defn reconciliate!
-  [el oh nh {:keys [interceptor] :as m}]
+  [el oh nh {:keys [interceptors] :as m}]
   {:pre [(or (vector? nh) (hic/literal? nh))
          (or (nil? m) (map? m))]}
-  (intercept interceptor :reconciliate {:target el :old-value oh :new-value nh}
+  (intercept interceptors :reconciliate {:target el :old-value oh :new-value nh}
     (if (hic/literal? nh) ; literal check is much more efficient than vector check
       (if-not (identical? oh nh)
-        (intercept interceptor :replace {:target el :value nh}
+        (intercept interceptors :replace {:target el :value nh}
           (assert (.-parentElement el) "Can't replace root element. If you want to change root element's type it must be encapsulated in a static element.")
           (dom/replace-text! el (str nh))))
       (reconciliate-vector! el oh nh m))))

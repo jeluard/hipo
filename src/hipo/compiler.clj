@@ -1,8 +1,7 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
             [cljs.analyzer.api :as ana]
-            [hipo.hiccup :as hic]
-            [hipo.interceptor :refer [intercept]]))
+            [hipo.hiccup :as hic]))
 
 (defn compile-set-attribute!
   [el m ns tag n v]
