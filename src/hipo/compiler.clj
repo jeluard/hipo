@@ -75,7 +75,7 @@
   [el o m]
   (if o
     (if (:force-compilation? m)
-      `(throw (ex-info "" {}))
+      `(throw (ex-info "Failed to compile" {:value ~o}))
       `(hipo.interpreter/append-to-parent ~el ~o ~m))))
 
 (defn text-compliant-hint?
@@ -154,7 +154,7 @@
       :default
       (if-let [f (:create-element-fn m)]
         (do
-          (assert (symbol? f) "Value for :create-element-fn ust be a symbol")
+          (assert (symbol? f) "Value for :create-element-fn must be a symbol")
           `(let [~el (~f ~ns ~tag (merge ~@literal-attrs ~@var-attrs ~@(if id `{:id ~id}) ~@(if class `{:class ~class})))]
              ~@(compile-children el children m &env)
              ~el))
@@ -178,18 +178,4 @@
     (cond
       (text-content? o &env) `(.createTextNode js/document ~o)
       (vector? o) `(compile-create-vector ~o ~m)
-      :else (if (:force-compilation? m) `(throw (ex-info "Failed to compile" {:value ~o })) `(hipo.interpreter/create ~o ~m)))))
-
-(defmacro compile-reconciliate
-  [f o m]
-  `(let [h# (~f ~o)
-         a# (volatile! h#)
-         m# ~m]
-     (if-let [el# (compile-create h# m#)]
-       [el#
-        (fn [no# & [mm#]]
-          (let [m# (merge m# mm#)
-                oh# @a#
-                nh# (~f no#)]
-            (hipo.interpreter/reconciliate! el# oh# nh# m#)
-            (vreset! a# nh#)))])))
+      :else (if (:force-compilation? m) `(throw (ex-info "Failed to compile" {:value ~o})) `(hipo.interpreter/create ~o ~m)))))

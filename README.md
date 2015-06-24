@@ -13,28 +13,15 @@ A ClojureScript DOM templating library based on [hiccup](https://github.com/weav
 
 ### Creation
 
-`create-static` converts an hiccup vector into a DOM node that can be directly inserted in a document.
-
-```clojure
-(ns …
-  (:require [hipo.core :as hipo]))
-
-(let [el (hipo/create-static [:div#id.class {:on-click #(.log js/console "click")} [:span]])]
-  (.appendChild js/document.body el))
-```
+`create` converts an hiccup vector into a DOM node that can be directly inserted in a document and provides an associated function that can be used to perform live reconciliation.
+Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
+The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to minimize DOM changes.
 
 Note that the hiccup syntax is extended to handle all properties whose name starts with **on-** as event listener registration.
 Listeners can be provided as a function or as a map (`{:name "my-listener" :fn (fn [] (.log js/console 1))}`) in which case they will only be updated if the name is updated.
 
-### Reconciliation
-
-`create` accepts a function returning an hiccup vector and a payload. It then returns a vector of the DOM element and a reconciliation function accepting another payload as argument.
-Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
-The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to minimize DOM changes.
-
 ```clojure
-(let [[el f] (hipo/create (fn [m] [:div#id.class [:span (:some-key m)]])
-                          {:some-key "1"})]
+(let [[el f] (hipo/create [:div#id.class [:span 1]])]
   (.appendChild js/document.body el)
   ; el is:
   ; <div id="id" class="class">
@@ -42,7 +29,7 @@ The reconciliation performs a diff of hiccup structure (DOM is not read) and tri
   ; </div>
 
   ; ... time passes
-  (f {:some-key "2"})
+  (f [:div#id.class [:span 2]])
 
   ; el is now;
   ; <div id="id" class="class">
@@ -51,17 +38,14 @@ The reconciliation performs a diff of hiccup structure (DOM is not read) and tri
   )
 ```
 
-Children are assumed to keep their position across reconciliations. If children can be shuffled around while still keeping their identity the `key` metadata must be used.
+Children are assumed to keep their position across reconciliations. If children can be shuffled around while still keeping their identity the `hipo/key` metadata must be used.
 
 ```clojure
-(let [[el f] (hipo/create
-               (fn [m]
-                 [:ul (for [i (:children m)]
-                   ^{:hipo/key i} [:li {:class i} i])])
-               {:children (range 6)})]
+(let [hf (fn [s] [:ul (for [i s] ^{:hipo/key i} [:li i])])
+      [el f] (hipo/create (hf (range 6)))]
   (.appendChild js/document.body el)
   ; ... time passes
-  (f {:children (reverse (range 6))}))
+  (f (hf (reverse (range 6)))))
 ```
 
 ### Interceptor
@@ -90,14 +74,10 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
       (println (:target m) "has been moved"))
     (f)))
 
-(let [[el f] (hipo/create
-               (fn [m]
-                 [:ul (for [i (:children m)]
-                   ^{:hipo/key i} [:li {:class i} i])])
-               {:children (range 6)})]
+(let [[el f] (hipo/create [:div])]
   (.appendChild js/document.body el)
   ; ... time passes
-  (f {:children (reverse (range 6))}
+  (f [:span]
      {:interceptors [(MyInterceptor.)]}))
 ```
 
@@ -111,8 +91,8 @@ Element attribute handling can be extending by providing a vector as `:attribute
 `:type` (`:prop` or `:attr`) defines if this attribute should be manipulated via attribute or property access. Alternatively provide a custom function via `:fn`.
 
 ```clojure
-(hipo/create-static [:input {:checked true}]
-                    {:attribute-handlers [{:target {:tag "input" :attr #{"checked" "value"}} :type :prop}]})
+(hipo/create [:input {:checked true}]
+             {:attribute-handlers [{:target {:tag "input" :attr #{"checked" "value"}} :type :prop}]})
 ```
 
 ### Element creation
@@ -126,7 +106,7 @@ A function can be passed to customize an element creation. This is useful when m
   [ns tag attrs]
   ...)
 
-(hipo/create-static [:div ^:text (my-fn)] {:create-element-fn my-ns/my-custom-fn})
+(hipo/create [:div ^:text (my-fn)] {:create-element-fn my-ns/my-custom-fn})
 ```
 
 As it can be referenced at macro expansion time the function must be provided as a fully qualified symbol.
@@ -137,7 +117,7 @@ As it can be referenced at macro expansion time the function must be provided as
 
 At compile-time JavaScript code is generated from the hiccup representation to minimize DOM node creation cost at the expense of code size.
 
-`(create-static [:div.class {:on-click #(.log js/console "click)} [:span])` will be converted into the following ClojureScript:
+`(create [:div.class {:on-click #(.log js/console "click)} [:span])` will be converted into the following ClojureScript:
 
 ```clojure
 (let [el (. js/document createElement "div")]
@@ -170,14 +150,6 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
           [:li (str "content-" o)])])))
 
 (hipo/create [:div (children)]) ; anything returned by children will be interpreted at runtime
-```
-
-```clojure
-(ns …
-  (:require [hipo.core :as hipo]))
-
-(let [el (hipo/create [:div#id.class "content"])]
-  (hipo/partially-compiled? el)) ; => false
 ```
 
 ### Type-Hinting

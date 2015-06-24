@@ -1,8 +1,9 @@
-## 0.5.0
+## [0.5.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.5.0)
 
 * **[+]** Introduced `:create-element-fn` hook
-* **[~]** Renamed `hipo.create` to `hipo.create-static`
-* **[~]** Set input properties via property access
+* **[+]** Attributes handling can be customized via `:attribute-handlers`
+* **[~]** Changed `hipo.create` semantic
+* **[~]** Interceptors can be chained
 
 ## [0.4.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.4.0)
 
@@ -11,7 +12,7 @@
 
 ## [0.3.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.3.0)
 
-* **[+]** Elements can be reconciliated via a function returned by `hipo.create-for-update`
+* **[+]** Elements can be reconciled via a function returned by `hipo.create-for-update`
 * **[~]** Rename `hipo` to `hipo.core` (no more single segment namespace)
 * **[-]** Custom Element **is** syntax (still discussed)
 
