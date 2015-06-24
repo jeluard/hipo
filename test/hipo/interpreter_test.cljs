@@ -34,7 +34,7 @@
   (testing "Redundant id attributes"
     (is (thrown? js/Error (hi/create [:div#id {:id "id"}] nil))))
   (testing "Non literal attributes"
-    (let [el (hi/create [:div {:attr {:hipo/key "value"}}] nil)]
+    (let [el (hi/create [:div {:attr {:key "value"}}] nil)]
       (is (= nil (.getAttribute el "attr")))))
   (testing "Attribute starting with on- are listeners"
     (let [el (hi/create [:div {:on-click #()}] nil)]

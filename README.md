@@ -108,6 +108,18 @@ Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interce
 
 ## Extensibility
 
+### Attribute handling
+
+Element attribute handling can be extending by providing a vector as `:attribute-handlers` value to the option map. Attribute can be targeted by providing a combination of `:ns`, `:tag` and `:attr`.
+`:type` (`:prop` or `:attr`) defines if this attribute should be manipulated via attribute or property access. Alternatively provide a custom function via `:fn`.
+
+```clojure
+(hipo/create-static [:input {:checked true}]
+                    {:attribute-handlers [{:target {:tag "input" :attr #{"checked" "value"}} :type :prop}]})
+```
+
+### Element creation
+
 A function can be passed to customize an element creation. This is useful when more efficient ways of creating a component are available.
 
 ```clojure

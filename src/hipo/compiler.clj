@@ -1,39 +1,30 @@
 (ns hipo.compiler
   (:require [clojure.string :as str]
             [cljs.analyzer.api :as ana]
-            [hipo.element :as el]
             [hipo.hiccup :as hic]
             [hipo.interceptor :refer [intercept]]))
 
 (defn compile-set-attribute!
-  [t el n v]
+  [el m ns tag n v]
   (if (hic/listener-name? n)
     (let [en (hic/listener-name->event-name n)
           f (or (:fn v) v)]
       `(do (.addEventListener ~el ~en ~f)
            (aset ~el ~(str "hipo_listener_" en) ~f)))
-    (cond
-      ; class can only be as attribute for svg elements
-      (= n "class")
-      `(.setAttribute ~el ~n ~v)
-      (or (not (hic/literal? v)) ; Set non-literal via property
-          (el/input-property? t n))
-      `(hipo.interpreter/set-property-value-runtime ~el ~n ~v)
-      :else
-      `(.setAttribute ~el ~n ~v))))
+    `(hipo.attribute/set-value! ~el ~m ~ns ~tag ~n nil ~v)))
 
 (defmacro compile-set-attribute!*
   "compile-time set attribute"
-  [t el k v]
+  [el m ns tag k v]
   {:pre [(keyword? k)]}
   (let [a (name k)]
     (if (hic/literal? v)
       (if v
-        (compile-set-attribute! t el a v))
+        (compile-set-attribute! el m ns tag a v))
       (let [ve (gensym "v")]
         `(let [~ve ~v]
            (if ~ve
-             ~(compile-set-attribute! t el a ve)))))))
+             ~(compile-set-attribute! el m ns tag a ve)))))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs
@@ -121,15 +112,15 @@
       class-keyword)))
 
 (defmacro compile-var-attrs
-  [el var-attrs class]
+  [el ns tag var-attrs class m]
   (let [k (gensym "k")
         v (gensym "v")]
     `(doseq [[~k ~v] ~var-attrs]
        (if ~v
          ~(if class
             `(let [cs# (if (= :class ~k) (str ~(str class " ") ~v) ~v)]
-               (hipo.interpreter/set-attribute! ~el (name ~k) nil cs#))
-            `(hipo.interpreter/set-attribute! ~el (name ~k) nil ~v))))))
+               (hipo.interpreter/set-attribute! ~el ~ns ~tag (name ~k) nil cs# ~m))
+            `(hipo.interpreter/set-attribute! ~el ~ns ~tag (name ~k) nil ~v ~m))))))
 
 (defn compile-children
   [el children m env]
@@ -170,14 +161,14 @@
              ~el))
         `(let [~el (compile-create-element ~ns ~tag)]
            ~@(for [[k v] (merge literal-attrs (if id {:id id}) (if class {:class class}))]
-               `(compile-set-attribute!* ~tag ~el ~k ~v))
+               `(compile-set-attribute!* ~el ~m ~tag ~ns ~k ~v))
            ~@(if var-attrs
                (if id
                  `[(do
                      (if (or (contains? ~var-attrs :id) (contains? ~var-attrs "id"))
                        (throw (ex-info "Cannot define id multiple times" {}))
-                       (compile-var-attrs ~el ~var-attrs ~class)))]
-                 `[(compile-var-attrs ~el ~var-attrs ~class)]))
+                       (compile-var-attrs ~el ~ns ~tag ~var-attrs ~class ~m)))]
+                 `[(compile-var-attrs ~el ~ns ~tag ~var-attrs ~class ~m)]))
            ~@(compile-children el children m &env)
            ~el)))))
 

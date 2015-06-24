@@ -1,48 +1,27 @@
 (ns hipo.interpreter
   (:require [clojure.set :as set]
+            [hipo.attribute :as attr]
             [hipo.dom :as dom]
-            [hipo.element :as el]
             [hipo.hiccup :as hic])
   (:require-macros [hipo.interceptor :refer [intercept]]))
 
-(defn- property-name->js-property-name [n] (.replace n "-" "_"))
-
-(defn set-property-value [el n v] (aset el (property-name->js-property-name n) v))
-(defn set-property-value-runtime [el n v] (if (hic/literal? v) (.setAttribute el n v) (set-property-value el n v)))
-
 (defn set-attribute!
-  ([el sok ov nv] (set-attribute! el sok ov nv nil))
-  ([el sok ov nv int]
-   (if-not (identical? ov nv)
-     (let [n (name sok)]
-       (if (hic/listener-name? n)
-         (if-not (and (map? ov) (map? nv)
-                      (identical? (:name ov) (:name nv)))
-           (intercept int (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-             (let [en (hic/listener-name->event-name n)
-                   hn (str "hipo_listener_" en)]
-               (if-let [l (aget el hn)]
-                 (.removeEventListener el en l))
-               (when-let [nv (or (:fn nv) nv)]
-                 (.addEventListener el en nv)
-                 (aset el hn nv)))))
-         (if (nil? nv)
-           (intercept int :remove-attribute {:target el :name sok :old-value ov}
-             (if (and (not (identical? n "class"))
-                      (or (not (hic/literal? ov)) (el/input-property? (.-localName el) n)))
-               (set-property-value el n nil)
-               (.removeAttribute el n)))
-           (if-not (and (hic/literal? nv) (= ov nv))
-             (intercept int :update-attribute {:target el :name sok :old-value ov :new-value nv}
-               (cond
-                 ; class can only be as attribute for svg elements
-                 (identical? n "class")
-                 (.setAttribute el n nv)
-                 (or (not (hic/literal? nv)) ; Set non-literal via property
-                     (el/input-property? (.-localName el) n))
-                 (set-property-value el n nv)
-                 :else
-                 (.setAttribute el n nv))))))))))
+  [el ns tag sok ov nv {:keys [interceptor] :as m}]
+  (if-not (identical? ov nv)
+    (let [n (name sok)]
+      (if (hic/listener-name? n)
+        (if-not (and (map? ov) (map? nv)
+                     (identical? (:name ov) (:name nv)))
+          (intercept interceptor (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+            (let [en (hic/listener-name->event-name n)
+                  hn (str "hipo_listener_" en)]
+              (if-let [l (aget el hn)]
+                (.removeEventListener el en l))
+              (when-let [nv (or (:fn nv) nv)]
+                (.addEventListener el en nv)
+                (aset el hn nv)))))
+        (intercept interceptor (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+          (attr/set-value! el m ns tag n ov nv))))))
 
 (declare create-child)
 
@@ -60,7 +39,7 @@
   (let [el (dom/create-element ns tag)]
     (doseq [[sok v] attrs]
       (if v
-        (set-attribute! el sok nil v (:interceptor m))))
+        (set-attribute! el ns tag sok nil v m)))
     el))
 
 (defn create-element
@@ -108,12 +87,12 @@
 (defn- static? [o] (contains? (meta o) :static))
 
 (defn reconciliate-attributes!
-  [el om nm int]
+  [el ns tag om nm m]
   (doseq [[sok nv] nm
           :let [ov (get om sok)]]
-    (set-attribute! el sok ov nv int))
+    (set-attribute! el ns tag sok ov nv m))
   (doseq [sok (set/difference (set (keys om)) (set (keys nm)))]
-    (set-attribute! el sok (get om sok) nil int)))
+    (set-attribute! el ns tag sok (get om sok) nil m)))
 
 (declare reconciliate!)
 
@@ -215,7 +194,7 @@
           nch (hic/children nh)]
       (intercept interceptor :reconciliate {:target el :old-value och :new-value nch}
         (reconciliate-children! el (hic/flatten-children och) (hic/flatten-children nch) m))
-      (reconciliate-attributes! el om nm interceptor))))
+      (reconciliate-attributes! el (hic/keyns nh) (hic/tag nh) om nm m))))
 
 (defn reconciliate!
   [el oh nh {:keys [interceptor] :as m}]
