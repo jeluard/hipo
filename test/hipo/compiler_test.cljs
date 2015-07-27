@@ -1,6 +1,6 @@
 (ns hipo.compiler-test
-  (:require [cemerick.cljs.test :as test])
-  (:require-macros [cemerick.cljs.test :refer [deftest is testing]]
+  (:require [cljs.test :as test])
+  (:require-macros [cljs.test :refer [deftest is testing]]
                    [hipo.compiler :refer [compile-create]]))
 
 (deftest attrs

@@ -1,8 +1,8 @@
 (ns hipo.core-test
-  (:require [cemerick.cljs.test :as test]
+  (:require [cljs.test :as test]
             [hipo.core :as hipo]
             cljsjs.document-register-element)
-  (:require-macros [cemerick.cljs.test :refer [deftest is]]))
+  (:require-macros [cljs.test :refer [deftest is]]))
 
 (deftest simple
   (is (= "B" (.-tagName (hipo/create [:b]))))

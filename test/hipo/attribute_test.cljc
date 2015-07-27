@@ -1,8 +1,8 @@
 (ns hipo.attribute-test
   (:require #?(:clj [clojure.test :refer [deftest is]])
-            #?(:cljs [cemerick.cljs.test :as test])
+            #?(:cljs [cljs.test :as test])
             [hipo.attribute :as attr])
-  #?(:cljs (:require-macros [cemerick.cljs.test :refer [deftest is]])))
+  #?(:cljs (:require-macros [cljs.test :refer [deftest is]])))
 
 (deftest matches?
   (is (true? (attr/matches? "div" "div")))

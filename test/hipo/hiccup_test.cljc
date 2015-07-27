@@ -1,8 +1,8 @@
 (ns hipo.hiccup-test
   (:require #?(:clj [clojure.test :refer [deftest is]])
-            #?(:cljs [cemerick.cljs.test :as test])
+            #?(:cljs [cljs.test :as test])
             [hipo.hiccup :as hi])
-  #?(:cljs (:require-macros [cemerick.cljs.test :refer [deftest is]])))
+  #?(:cljs (:require-macros [cljs.test :refer [deftest is]])))
 
 (deftest key->namespace
   (is (= "http://www.w3.org/2000/svg" (hi/key->namespace "svg" {})))
@@ -56,7 +56,5 @@
 
 (deftest listener-name
   (is (true? (hi/listener-name? "on-listener")))
-  (is (false? (hi/listener-name? "listener"))))
-
-(deftest listener-name
+  (is (false? (hi/listener-name? "listener")))
   (is (= "listener" (hi/listener-name->event-name "on-listener"))))

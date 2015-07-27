@@ -10,16 +10,15 @@
                    [cljsjs/document-register-element "0.4.3-0"]
                    [org.clojure/test.check "0.7.0"]]
     :plugins [[lein-cljsbuild "1.0.5"]
-              [com.cemerick/clojurescript.test "0.3.3"]]}}
+              [lein-doo "0.1.4-SNAPSHOT"]]}}
   :cljsbuild
   {:builds
    {:test {:source-paths ["src" "test"]
            :compiler {:output-to "target/unit-test.js"
+                      :main 'hipo.runner
                       :optimizations :whitespace
-                      :pretty-print true}}}
-   :test-commands {"slimerjs" ["slimerjs" :runner "target/unit-test.js"]
-                   "phantomjs" ["phantomjs" :runner "target/unit-test.js"]}}
-  :aliases {"clean-test" ["do" "clean," "test," "cljsbuild" "test"]
+                      :pretty-print true}}}}
+  :aliases {"clean-test" ["do" "clean," "test," "doo" "phantom" "test" "once"]
             "clean-install" ["do" "clean," "install"]}
   :deploy-repositories {"clojars" {:sign-releases false :url "https://clojars.org/repo/"}}
   :min-lein-version "2.5.0")

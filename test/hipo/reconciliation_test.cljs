@@ -1,8 +1,8 @@
 (ns hipo.reconciliation-test
-  (:require [cemerick.cljs.test :as test]
+  (:require [cljs.test :as test]
             [hipo.core :as hipo]
             [hipo.interceptor :refer [Interceptor]])
-  (:require-macros [cemerick.cljs.test :refer [deftest is testing]]))
+  (:require-macros [cljs.test :refer [deftest is testing]]))
 
 (deftest html
   (testing "Basic element"

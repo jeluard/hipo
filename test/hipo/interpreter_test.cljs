@@ -1,7 +1,7 @@
 (ns hipo.interpreter-test
-  (:require [cemerick.cljs.test :as test]
+  (:require [cljs.test :as test]
             [hipo.interpreter :as hi])
-  (:require-macros [cemerick.cljs.test :refer [deftest is testing]]))
+  (:require-macros [cljs.test :refer [deftest is testing]]))
 
 (deftest attrs
   (testing "Basic inline attributes"
