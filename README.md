@@ -13,15 +13,35 @@ A ClojureScript DOM templating library based on [hiccup](https://github.com/weav
 
 ### Creation
 
-`create` converts an hiccup vector into a DOM node that can be directly inserted in a document and provides an associated function that can be used to perform live reconciliation.
-Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
-The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to minimize DOM changes.
+`hipo.core/create` converts an hiccup vector into a DOM node that can be directly inserted in a document.
 
 Note that the hiccup syntax is extended to handle all properties whose name starts with **on-** as event listener registration.
 Listeners can be provided as a function or as a map (`{:name "my-listener" :fn (fn [] (.log js/console 1))}`) in which case they will only be updated if the name is updated.
 
 ```clojure
-(let [[el f] (hipo/create [:div#id.class [:span 1]])]
+(ns my-test
+  (:require [hipo.core :as hipo]))
+
+(let [el (hipo/create [:div#id.class [:span 1]])]
+  (.appendChild js/document.body el)
+  ; el is:
+  ; <div id="id" class="class">
+  ;   <span>1</span>
+  ; </div>
+  )
+```
+
+### Reconciliation
+
+A DOM node can be reconciled to a new hiccup representation using `hipo.core/reconciliate!`.
+Each time the reconciliation function is called the DOM element is modified so that it reflects the new hiccup element.
+The reconciliation performs a diff of hiccup structure (DOM is not read) and tries to minimize DOM changes.
+
+```clojure
+(ns my-test
+  (:require [hipo.core :as hipo]))
+
+(let [el (hipo/create [:div#id.class [:span 1]])]
   (.appendChild js/document.body el)
   ; el is:
   ; <div id="id" class="class">
@@ -29,7 +49,7 @@ Listeners can be provided as a function or as a map (`{:name "my-listener" :fn (
   ; </div>
 
   ; ... time passes
-  (f [:div#id.class [:span 2]])
+  (hipo/reconciliate! el [:div#id.class [:span 2]])
 
   ; el is now;
   ; <div id="id" class="class">
@@ -41,11 +61,14 @@ Listeners can be provided as a function or as a map (`{:name "my-listener" :fn (
 Children are assumed to keep their position across reconciliations. If children can be shuffled around while still keeping their identity the `hipo/key` metadata must be used.
 
 ```clojure
-(let [hf (fn [s] [:ul (for [i s] ^{:hipo/key i} [:li i])])
-      [el f] (hipo/create (hf (range 6)))]
+(ns my-test
+  (:require [hipo.core :as hipo]))
+
+(let [f (fn [s] [:ul (for [i s] ^{:hipo/key i} [:li i])])
+      el (hipo/create (f (range 6)))]
   (.appendChild js/document.body el)
   ; ... time passes
-  (f (hf (reverse (range 6)))))
+  (hipo/reconciliate! el (f (reverse (range 6)))))
 ```
 
 ### Interceptor
@@ -74,11 +97,10 @@ Beware that preventing some part of the reconciliation might lead to an inconsis
       (println (:target m) "has been moved"))
     (f)))
 
-(let [[el f] (hipo/create [:div])]
+(let [el (hipo/create [:div])]
   (.appendChild js/document.body el)
   ; ... time passes
-  (f [:span]
-     {:interceptors [(MyInterceptor.)]}))
+  (hipo/reconciliate! el [:span] {:interceptors [(MyInterceptor.)]}))
 ```
 
 Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interceptor.cljs) are bundled by default.

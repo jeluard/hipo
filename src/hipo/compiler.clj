@@ -173,9 +173,7 @@
 
 (defmacro compile-create
   [o m]
-  (if (:force-interpretation? m)
-    `(hipo.interpreter/create ~o ~m)
-    (cond
-      (text-content? o &env) `(.createTextNode js/document ~o)
-      (vector? o) `(compile-create-vector ~o ~m)
-      :else (if (:force-compilation? m) `(throw (ex-info "Failed to compile" {:value ~o})) `(hipo.interpreter/create ~o ~m)))))
+  (cond
+    (text-content? o &env) `(.createTextNode js/document ~o)
+    (vector? o) `(compile-create-vector ~o ~m)
+    :else (if (:force-compilation? m) `(throw (ex-info "Failed to compile" {:value ~o})) `(hipo.interpreter/create ~o ~m))))

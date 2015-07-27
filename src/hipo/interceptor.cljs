@@ -1,4 +1,5 @@
-(ns hipo.interceptor)
+(ns hipo.interceptor
+  (:require-macros hipo.interceptor))
 
 (defprotocol Interceptor
   (-intercept [this t m f]))
@@ -37,6 +38,7 @@
 
 (deftype PerformanceInterceptor [label]
   Interceptor
+  ; http://w3c.github.io/user-timing/
   (-intercept [_ t _ f]
     (let [mark-begin (str label " begin " t)
           mark-end (str label " end " t)]

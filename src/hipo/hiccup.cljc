@@ -60,18 +60,19 @@
 
 (defn attributes
   [v]
-  (let [n (name (node v))
-        id (parse-id n)
-        cs (parse-classes n)
-        m? (nth v 1 nil)]
-    (if (map? m?)
-      (if (and id (contains? m? :id))
-        (throw (ex-info "Cannot define id multiple times" {}))
+  (if v
+    (let [n (name (node v))
+          id (parse-id n)
+          cs (parse-classes n)
+          m? (nth v 1 nil)]
+      (if (map? m?)
+        (if (and id (contains? m? :id))
+          (throw (ex-info "Cannot define id multiple times" {}))
+          (if (or id cs)
+            (merge m? (if id {:id id}) (if cs {:class (if-let [c (:class m?)] (if cs (str cs " " c) (str c)) cs)}))
+            m?))
         (if (or id cs)
-          (merge m? (if id {:id id}) (if cs {:class (if-let [c (:class m?)] (if cs (str cs " " c) (str c)) cs)}))
-          m?))
-      (if (or id cs)
-        {:id id :class cs}))))
+          {:id id :class cs})))))
 
 (defn children
   [v]

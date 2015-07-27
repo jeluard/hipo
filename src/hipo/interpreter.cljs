@@ -2,8 +2,8 @@
   (:require [clojure.set :as set]
             [hipo.attribute :as attr]
             [hipo.dom :as dom]
-            [hipo.hiccup :as hic])
-  (:require-macros [hipo.interceptor :refer [intercept]]))
+            [hipo.hiccup :as hic]
+            [hipo.interceptor :refer-macros [intercept]]))
 
 (defn set-attribute!
   [el ns tag sok ov nv {:keys [interceptors] :as m}]
@@ -20,7 +20,7 @@
               (when-let [nv (or (:fn nv) nv)]
                 (.addEventListener el en nv)
                 (aset el hn nv)))))
-        (intercept interceptors (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+        (intercept interceptors (if nv :update-attribute :remove-attribute) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
           (attr/set-value! el m ns tag n ov nv))))))
 
 (declare create-child)
@@ -83,8 +83,6 @@
     (not (nil? o)) (create-child o m)))
 
 ; Reconciliate
-
-(defn- static? [o] (contains? (meta o) :static))
 
 (defn reconciliate-attributes!
   [el ns tag om nm m]
