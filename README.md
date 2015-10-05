@@ -73,7 +73,7 @@ Children are assumed to keep their position across reconciliations. If children 
 
 ### Interceptor
 
-Any DOM changes happening during the reconciliation can be intercepted / prevented via an `Interceptor` implementation. Interceptors are defined by providing a vector as `:attribute-handlers` value in the option map.
+Any DOM changes happening during the reconciliation can be intercepted / prevented via an `Interceptor` implementation. Interceptors are defined by providing a vector as `:interceptors` value in the option map.
 
 An interceptor must implement the `-intercept` function that receives 3 arguments:
 
@@ -109,12 +109,22 @@ Some [interceptors](https://github.com/jeluard/hipo/blob/master/src/hipo/interce
 
 ### Attribute handling
 
-Element attribute handling can be extending by providing a vector as `:attribute-handlers` value in the option map. Attribute can be targeted by providing a combination of `:ns`, `:tag` and `:attr`.
-`:type` (`:prop` or `:attr`) defines if this attribute should be manipulated via attribute or property access. Alternatively provide a custom function via `:fn`.
+Element attribute handling can be extending by providing a vector as `:attribute-handlers` value in the option map.
+Attribute can be targeted by providing a combination of `:ns`, `:tag` and `:attr` (no value matches all candidates).
+
+
+`:type` (`:prop` or `:attr`) defines if this attribute should be manipulated via attribute or property access.
 
 ```clojure
 (hipo/create [:input {:checked true}]
              {:attribute-handlers [{:target {:tag "input" :attr #{"checked" "value"}} :type :prop}]})
+```
+
+Alternatively provide a custom function via `:fn` that will be responsible for dealing with this attribute value.
+
+```clojure
+(hipo/create [:span {:style {:background-color "blue"}]
+             {:attribute-handlers [{:target {:attr "style"} :fn hipo.attribute/style-handler}]})
 ```
 
 ### Element creation
