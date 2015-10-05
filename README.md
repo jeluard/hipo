@@ -124,8 +124,10 @@ Alternatively provide a custom function via `:fn` that will be responsible for d
 
 ```clojure
 (hipo/create [:span {:style {:background-color "blue"}]
-             {:attribute-handlers [{:target {:attr "style"} :fn hipo.attribute/style-handler}]})
+             {:attribute-handlers [{:target {:attr "style"} :fn some-fn}]})
 ```
+
+Some [handlers](https://github.com/jeluard/hipo/blob/master/src/hipo/attribute.cljc) are bundled by default.
 
 ### Element creation
 
