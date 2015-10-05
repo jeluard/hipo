@@ -1,6 +1,9 @@
 (ns hipo.attribute
   (:require [hipo.hiccup :as hic]))
 
+#?(:cljs
+(def style-handler {:target {:attr "style"} :fn #(doseq [[k v] %4] (aset %1 "style" (name k) v))}))
+
 (defn- property-name->js-property-name [n] (.replace n "-" "_"))
 
 (defn set-property-value [el n v] (aset el (property-name->js-property-name n) v))
@@ -18,8 +21,8 @@
    {:target {:tag "textarea" :attr #{"value"}} :type :prop}])
 
 (defn matches?
-  [s expr]
-  (if s
+  [expr s]
+  (if expr
     (cond
       (set? expr) (contains? expr s)
       :else (= s expr))
@@ -27,9 +30,9 @@
 
 (defn target-matches?
   [m ns tag attr]
-  (and (matches? ns (:ns m))
-       (matches? tag (:tag m))
-       (matches? attr (:attr m))))
+  (and (matches? (:ns m) ns)
+       (matches? (:tag m) tag)
+       (matches? (:attr m) attr)))
 
 (defn handler
   [m ns tag attr]

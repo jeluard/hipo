@@ -1,5 +1,6 @@
 (ns hipo.interpreter-test
   (:require [cljs.test :as test]
+            [hipo.attribute :as hattr]
             [hipo.interpreter :as hi])
   (:require-macros [cljs.test :refer [deftest is testing]]))
 
@@ -41,4 +42,8 @@
       (is (nil?(.-onclick el)))))
   (testing "Listeners can be provided as map"
     (let [el (hi/create [:div {:on-click {:name "click" :fn #()}}] nil)]
-      (is (nil?(.-onclick el))))))
+      (is (nil?(.-onclick el)))))
+  (testing "Attributes can be handled specifically"
+    (let [el (hi/create [:span {:style {:backgroundColor "blue"}}]
+                        {:attribute-handlers [hattr/style-handler]})]
+      (is (= "blue" (.. el -style -backgroundColor))))))
