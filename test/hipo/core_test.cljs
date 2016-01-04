@@ -135,4 +135,5 @@
 (deftest namespaces
   (is (= "http://www.w3.org/1999/xhtml" (.-namespaceURI (hipo/create [:p]))))
   (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create [:svg/circle]))))
+  (is (= "#id" (.. (hipo/create [:svg/use {:xlink/href "#id"}]) -href -baseVal)))
   (is (= "http://www.w3.org/2000/svg" (.-namespaceURI (hipo/create [:svg/circle] {:force-interpretation? true})))))

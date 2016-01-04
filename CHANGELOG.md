@@ -1,3 +1,7 @@
+## 0.5.2
+
+* **[+]** Attributes can have namespaces
+
 ## [0.5.0](https://github.com/jeluard/hipo/issues?q=is%3Aclosed+milestone%3A0.5.0)
 
 * **[+]** Introduced `:create-element-fn` hook

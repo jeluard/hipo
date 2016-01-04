@@ -8,20 +8,18 @@
 (defn set-attribute!
   [el ns tag sok ov nv {:keys [interceptors] :as m}]
   (if-not (identical? ov nv)
-    (let [n (name sok)]
-      (if (hic/listener-name? n)
-        (if-not (and (map? ov) (map? nv)
-                     (identical? (:name ov) (:name nv)))
-          (intercept interceptors (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-            (let [en (hic/listener-name->event-name n)
-                  hn (str "hipo_listener_" en)]
-              (if-let [l (aget el hn)]
-                (.removeEventListener el en l))
-              (when-let [nv (or (:fn nv) nv)]
-                (.addEventListener el en nv)
-                (aset el hn nv)))))
-        (intercept interceptors (if nv :update-attribute :remove-attribute) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
-          (attr/set-value! el m ns tag n ov nv))))))
+    (if-let [en (hic/listener-name->event-name (name sok))]
+      (if-not (and (map? ov) (map? nv)
+                   (identical? (:name ov) (:name nv)))
+        (intercept interceptors (if nv :update-handler :remove-handler) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+          (let [hn (str "hipo_listener_" en)]
+            (if-let [l (aget el hn)]
+              (.removeEventListener el en l))
+            (when-let [nv (or (:fn nv) nv)]
+              (.addEventListener el en nv)
+              (aset el hn nv)))))
+    (intercept interceptors (if nv :update-attribute :remove-attribute) (merge {:target el :name sok :old-value ov} (if nv {:new-value nv}))
+      (attr/set-value! el m ns tag sok ov nv)))))
 
 (declare create-child)
 

@@ -4,26 +4,24 @@
             [hipo.hiccup :as hic]))
 
 (defn compile-set-attribute!
-  [el m ns tag n v]
-  (if (hic/listener-name? n)
-    (let [en (hic/listener-name->event-name n)
-          f (or (:fn v) v)]
+  [el m ns tag k v]
+  (if-let [en (hic/listener-name->event-name (name k))]
+    (let [f (or (:fn v) v)]
       `(do (.addEventListener ~el ~en ~f)
            (aset ~el ~(str "hipo_listener_" en) ~f)))
-    `(hipo.attribute/set-value! ~el ~m ~ns ~tag ~n nil ~v)))
+    `(hipo.attribute/set-value! ~el ~m ~ns ~tag ~k nil ~v)))
 
 (defmacro compile-set-attribute!*
   "compile-time set attribute"
   [el m ns tag k v]
   {:pre [(keyword? k)]}
-  (let [a (name k)]
-    (if (hic/literal? v)
-      (if v
-        (compile-set-attribute! el m ns tag a v))
-      (let [ve (gensym "v")]
-        `(let [~ve ~v]
-           (if ~ve
-             ~(compile-set-attribute! el m ns tag a ve)))))))
+  (if (hic/literal? v)
+    (if v
+      (compile-set-attribute! el m ns tag k v))
+    (let [ve (gensym "v")]
+      `(let [~ve ~v]
+         (if ~ve
+           ~(compile-set-attribute! el m ns tag k ve))))))
 
 (defn parse-keyword
   "return pair [tag class-str id] where tag is dom tag and attrs

@@ -4,7 +4,8 @@
 (def ^:private id-separator "#")
 (def ^:private class-separator ".")
 
-(def ^:private default-namespaces {"svg" "http://www.w3.org/2000/svg"})
+(def ^:private default-namespaces {"svg" "http://www.w3.org/2000/svg"
+                                   "xlink" "http://www.w3.org/1999/xlink"})
 
 (defn key->namespace
   [s m]
@@ -128,8 +129,8 @@
 
 (defn listener-name->event-name
   [s]
-  {:pre [(listener-name? s)]}
-  (subs s 3))
+  (if (listener-name? s)
+    (subs s 3)))
 
 (defn classes
   [s]

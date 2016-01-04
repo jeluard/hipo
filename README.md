@@ -129,6 +129,22 @@ Alternatively provide a custom function via `:fn` that will be responsible for d
 
 Some [handlers](https://github.com/jeluard/hipo/blob/master/src/hipo/attribute.cljc) are bundled by default.
 
+### Namespaces
+
+DOM elements are created assuming the default HTML namespace. Specific namespaces can be used by introducing a namespace when declaring DOM nodes / attributes. This namespace is then used as a key to lookup the full namespace URL. By default `svg` and `xlink` are supported.
+
+```clojure
+(hipo/create [:svg/svg
+               [:svg/circle {:r "10"}]
+               [:svg/use {:xlink/href "#id"}]])
+```
+
+```clojure
+(hipo/create [:div
+               [:some-ns/elem]]
+             {:namespaces {"some-ns" "some://url"}})
+```
+
 ### Element creation
 
 A function can be passed to customize an element creation. This is useful when more efficient ways of creating a component are available.
@@ -151,7 +167,7 @@ As it can be referenced at macro expansion time the function must be provided as
 
 At compile-time JavaScript code is generated from the hiccup representation to minimize DOM node creation cost at the expense of code size.
 
-`(create [:div.class {:on-click #(.log js/console "click)} [:span])` will be converted into the following ClojureScript:
+`(hipo/create [:div.class {:on-click #(.log js/console "click)} [:span])` will be converted into the following ClojureScript:
 
 ```clojure
 (let [el (. js/document createElement "div")]
@@ -188,7 +204,7 @@ Once in interpreted mode any nested child will not be compiled even if it is a v
 
 ### Type-Hinting
 
-When you know the result of a function call will be converted to an HTML text node (as opposed to an HTML element) the `^:text` metadata can be used as a hint for the compiler to optimise the generated JavaScript code.
+When you know the result of a function call will be converted to an HTML text node (as opposed to an HTML element) the `^:text` metadata can be used as a hint for the compiler to optimize the generated JavaScript code.
 
 ```clojure
 (defn my-fn []
