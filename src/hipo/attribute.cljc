@@ -27,7 +27,7 @@
 (def default-handlers
   [{:target {:ns "svg" :attr "class"} :type :attr}
    {:target {:tag "input" :attr #{"value" "checked"}} :type :prop}
-   {:target {:tag "input" :attr "autofocus"} :fn #(when %4 (.focus %1) (.setAttribute %1 %2 %4))}
+   {:target {:tag "input" :attr "autofocus"} :fn #(when %4 (.focus %1) (.setAttribute %1 (name %2) %4))}
    {:target {:tag "option" :attr #{"selected"}} :type :prop}
    {:target {:tag "select" :attr #{"value" "selectIndex"}} :type :prop}
    {:target {:tag "textarea" :attr #{"value"}} :type :prop}])
